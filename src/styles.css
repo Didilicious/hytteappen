@@ -653,6 +653,13 @@ h1 {
   stroke-width: 2;
 }
 
+.task-button__icon img {
+  display: block;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
 .task-button__label {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.45rem;
