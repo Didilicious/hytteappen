@@ -14,8 +14,7 @@ export function getFamilyMember(accountId: unknown): FamilyMember | null {
   if (typeof accountId !== 'string') return null
 
   const familyMembers: Record<string, FamilyMember> = {
-    jan: { id: 'jan', displayName: 'Jan' },
-    'anne-marie': { id: 'anne-marie', displayName: 'Anne Marie' },
+    'anne-jan': { id: 'anne-jan', displayName: 'Anne Marie & Jan' },
     christine: { id: 'christine', displayName: 'Christine' },
     anette: { id: 'anette', displayName: 'Anette' },
     mads: { id: 'mads', displayName: 'Mads' },
