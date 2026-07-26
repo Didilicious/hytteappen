@@ -6,8 +6,7 @@ export type FamilyMember = {
 }
 
 export const familyMembers: FamilyMember[] = [
-  { id: 'jan', displayName: 'Jan' },
-  { id: 'anne-marie', displayName: 'Anne Marie' },
+  { id: 'anne-jan', displayName: 'Anne Marie & Jan' },
   { id: 'christine', displayName: 'Christine' },
   { id: 'anette', displayName: 'Anette' },
   { id: 'mads', displayName: 'Mads' },
