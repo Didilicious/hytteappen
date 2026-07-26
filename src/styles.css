@@ -372,6 +372,8 @@ a:focus-visible {
 
 .intro-block,
 .home-intro,
+.booking-intro,
+.booking-placeholder,
 .guide-heading,
 .overview-heading {
   max-width: 550px;
@@ -430,6 +432,37 @@ h1 {
   color: var(--muted);
   font-size: clamp(1.08rem, 3vw, 1.35rem);
   line-height: 1.45;
+}
+
+.booking-intro > p:last-child {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: clamp(1.08rem, 3vw, 1.35rem);
+  line-height: 1.45;
+}
+
+.booking-actions {
+  display: grid;
+  gap: 13px;
+  margin-top: 52px;
+}
+
+.booking-placeholder {
+  display: grid;
+  justify-items: start;
+}
+
+.booking-placeholder .secondary-button {
+  display: inline-flex;
+  width: auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 44px;
+  padding-inline: 24px;
+}
+
+.booking-placeholder .secondary-button span {
+  font-size: 1.2rem;
 }
 
 .lead {
