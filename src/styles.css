@@ -795,6 +795,11 @@ h1 {
   border-top: 1px solid #e0dbd0;
 }
 
+.instruction-card .instruction-error {
+  color: #963b2d;
+  font-weight: 700;
+}
+
 .completion-mark {
   display: grid;
   width: 76px;

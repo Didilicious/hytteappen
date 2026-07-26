@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import GuideLayout from '../components/GuideLayout'
 import type { GuideNode, InstructionNode, QuestionNode } from '../guideData'
@@ -115,6 +115,60 @@ function QuestionContent({
   )
 }
 
+type KeyBoxCodeState =
+  | { status: 'loading' }
+  | { status: 'loaded'; code: string }
+  | { status: 'error' }
+
+function KeyBoxCodeParagraph() {
+  const [codeState, setCodeState] = useState<KeyBoxCodeState>({ status: 'loading' })
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadCode() {
+      try {
+        const response = await fetch('/.netlify/functions/key-box-code', {
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          setCodeState({ status: 'error' })
+          return
+        }
+
+        const body = await response.json() as { code?: unknown }
+        if (typeof body.code !== 'string' || !body.code) {
+          setCodeState({ status: 'error' })
+          return
+        }
+
+        setCodeState({ status: 'loaded', code: body.code })
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setCodeState({ status: 'error' })
+        }
+      }
+    }
+
+    void loadCode()
+
+    return () => controller.abort()
+  }, [])
+
+  if (codeState.status === 'loaded') {
+    return <p aria-live="polite">Koden er {codeState.code}.</p>
+  }
+
+  if (codeState.status === 'error') {
+    return <p className="instruction-error" role="alert">Kunne ikke hente koden. Prøv igjen senere.</p>
+  }
+
+  return <p aria-live="polite">Henter koden …</p>
+}
+
 function InstructionContent({
   node,
   status,
@@ -127,7 +181,12 @@ function InstructionContent({
   return (
     <div className="guide-body page-enter page-enter--delay">
       <div className="instruction-card">
-        {node.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        {node.paragraphs.map((paragraph, index) => (
+          <Fragment key={paragraph}>
+            <p>{paragraph}</p>
+            {node.showsKeyBoxCode && index === 0 && <KeyBoxCodeParagraph />}
+          </Fragment>
+        ))}
       </div>
 
       <div className="instruction-actions" aria-label="Status for steget">
