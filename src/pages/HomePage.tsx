@@ -1,17 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import AppFrame from '../components/AppFrame'
+import cabinIcon from '../assets/icons/icon_cabin.png'
+import lockedCabinIcon from '../assets/icons/icon_cabin_locked.png'
+import openCabinIcon from '../assets/icons/icon_cabin_open.png'
 
 type ActionIconProps = {
-  type: 'arrive' | 'leave' | 'cabin' | 'calendar' | 'pizza'
-}
-
-function CabinGlyph() {
-  return (
-    <g transform="translate(1 8) scale(1.45)">
-      <path d="m3 11 9-7 9 7v9H3v-9Z" />
-      <path d="M9 20v-6h6v6M7 11h10" />
-    </g>
-  )
+  type: 'calendar' | 'pizza'
 }
 
 function ActionIcon({ type }: ActionIconProps) {
@@ -24,27 +18,13 @@ function ActionIcon({ type }: ActionIconProps) {
     )
   }
 
-  if (type === 'pizza') {
-    return (
-      <svg viewBox="0 0 48 48" focusable="false">
-        <path d="M10 39 20 10c8.5 2.2 15.2 6.4 19 13L10 39Z" />
-        <path d="M18.2 15.2c7.4 2 12.8 5.4 16.5 10.5" />
-        <circle cx="22" cy="24" r="1.6" />
-        <circle cx="29" cy="21.5" r="1.6" />
-        <circle cx="17.5" cy="31" r="1.6" />
-      </svg>
-    )
-  }
-
   return (
-    <svg viewBox="0 0 56 48" focusable="false">
-      <CabinGlyph />
-      {type === 'arrive' && (
-        <path d="M52 15Q39 13 29 25M35 23l-6 2 2-6" />
-      )}
-      {type === 'leave' && (
-        <path d="M29 25Q39 13 52 15M47 11l5 4-6 2" />
-      )}
+    <svg viewBox="0 0 48 48" focusable="false">
+      <path d="M10 39 20 10c8.5 2.2 15.2 6.4 19 13L10 39Z" />
+      <path d="M18.2 15.2c7.4 2 12.8 5.4 16.5 10.5" />
+      <circle cx="22" cy="24" r="1.6" />
+      <circle cx="29" cy="21.5" r="1.6" />
+      <circle cx="17.5" cy="31" r="1.6" />
     </svg>
   )
 }
@@ -65,19 +45,19 @@ export default function HomePage() {
           type="button"
           onClick={() => navigate('/guide/open-cabin/get-key')}
         >
-          <span className="task-button__icon" aria-hidden="true"><ActionIcon type="arrive" /></span>
+          <span className="task-button__icon" aria-hidden="true"><img src={openCabinIcon} alt="" /></span>
           <span className="task-button__label">Åpne hytte</span>
           <span className="task-button__arrow" aria-hidden="true">→</span>
         </button>
 
         <button className="task-button task-button--disabled" type="button" disabled>
-          <span className="task-button__icon" aria-hidden="true"><ActionIcon type="leave" /></span>
+          <span className="task-button__icon" aria-hidden="true"><img src={lockedCabinIcon} alt="" /></span>
           <span className="task-button__label">Stenge hytte</span>
           <span className="task-button__status">Kommer senere</span>
         </button>
 
         <button className="task-button task-button--disabled" type="button" disabled>
-          <span className="task-button__icon" aria-hidden="true"><ActionIcon type="cabin" /></span>
+          <span className="task-button__icon" aria-hidden="true"><img src={cabinIcon} alt="" /></span>
           <span className="task-button__label">Drift av hytte</span>
           <span className="task-button__status">Kommer senere</span>
         </button>
