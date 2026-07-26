@@ -114,6 +114,48 @@ const openCabinGuide: GuideDefinition = {
   },
 }
 
+const closeCabinGuide: GuideDefinition = {
+  id: 'close-cabin',
+  title: 'Stenge hytte',
+  section: {
+    label: 'STENGE HYTTE',
+    icon: 'lock',
+  },
+  startNodeId: 'not-ready',
+  nodes: {
+    'not-ready': {
+      id: 'not-ready',
+      type: 'completion',
+      title: 'Stenge hytte',
+      paragraphs: ['Denne guiden er ikke ferdig ennå.'],
+      actionLabel: 'Tilbake til forsiden',
+      nextPath: '/',
+    },
+  },
+}
+
+const cabinOperationsGuide: GuideDefinition = {
+  id: 'cabin-operations',
+  title: 'Drift av hytte',
+  section: {
+    label: 'DRIFT AV HYTTE',
+    icon: 'cabin-open',
+  },
+  startNodeId: 'not-ready',
+  nodes: {
+    'not-ready': {
+      id: 'not-ready',
+      type: 'completion',
+      title: 'Drift av hytte',
+      paragraphs: ['Denne guiden er ikke ferdig ennå.'],
+      actionLabel: 'Tilbake til forsiden',
+      nextPath: '/',
+    },
+  },
+}
+
 export const guides: Record<string, GuideDefinition> = {
   [openCabinGuide.id]: openCabinGuide,
+  [closeCabinGuide.id]: closeCabinGuide,
+  [cabinOperationsGuide.id]: cabinOperationsGuide,
 }
