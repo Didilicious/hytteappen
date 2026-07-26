@@ -70,10 +70,10 @@ export default function HomePage() {
           <span className="task-button__arrow" aria-hidden="true">→</span>
         </button>
 
-        <button className="task-button task-button--disabled" type="button" disabled>
+        <button className="task-button" type="button" onClick={() => navigate('/booking')}>
           <span className="task-button__icon" aria-hidden="true"><ActionIcon type="calendar" /></span>
           <span className="task-button__label">Booke hyttetid</span>
-          <span className="task-button__status">Kommer senere</span>
+          <span className="task-button__arrow" aria-hidden="true">→</span>
         </button>
 
         <button className="task-button task-button--disabled" type="button" disabled>

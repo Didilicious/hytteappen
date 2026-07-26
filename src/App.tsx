@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth'
+import BookingLandingPage from './pages/BookingLandingPage'
+import BookingPlaceholderPage from './pages/BookingPlaceholderPage'
 import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -42,6 +44,38 @@ export default function App() {
         element={
           <ProtectedRoute>
             <GuidePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/booking"
+        element={
+          <ProtectedRoute>
+            <BookingLandingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/booking/calendar"
+        element={
+          <ProtectedRoute>
+            <BookingPlaceholderPage title="Se hyttekalender" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/booking/new"
+        element={
+          <ProtectedRoute>
+            <BookingPlaceholderPage title="Registrer ny tid" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/booking/edit"
+        element={
+          <ProtectedRoute>
+            <BookingPlaceholderPage title="Rediger dine tider" />
           </ProtectedRoute>
         }
       />
