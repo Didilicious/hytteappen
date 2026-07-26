@@ -6,6 +6,7 @@ import BookingPlaceholderPage from './pages/BookingPlaceholderPage'
 import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import NewBookingPage from './pages/NewBookingPage'
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation()
@@ -67,7 +68,7 @@ export default function App() {
         path="/booking/new"
         element={
           <ProtectedRoute>
-            <BookingPlaceholderPage title="Registrer ny tid" />
+            <NewBookingPage />
           </ProtectedRoute>
         }
       />
