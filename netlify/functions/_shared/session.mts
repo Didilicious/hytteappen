@@ -87,6 +87,12 @@ export function readCookie(request: Request, name: string) {
   return undefined
 }
 
+export function getAuthenticatedFamilyMember(request: Request) {
+  const sessionSecret = getRequiredSecret('SESSION_SECRET')
+  const token = readCookie(request, getSessionCookieName())
+  return readSessionToken(token, sessionSecret)
+}
+
 export function getSessionCookieName() {
   return 'hytteguiden_session'
 }

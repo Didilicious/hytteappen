@@ -22,6 +22,7 @@ export type QuestionNode = GuideNodeBase<'question'> & {
 export type InstructionNode = GuideNodeBase<'instruction'> & {
   paragraphs: string[]
   nextNodeId: string
+  showsKeyBoxCode?: boolean
 }
 
 export type CompletionNode = GuideNodeBase<'completion'> & {
@@ -64,9 +65,9 @@ const openCabinGuide: GuideDefinition = {
       title: 'Hent nøkkelen',
       paragraphs: [
         'Åpne nøkkelboksen som er plassert til høyre for den gamle ytterdøren.',
-        'Koden er 1234.',
         'Lås opp den nye ytterdøren, og legg nøkkelen tilbake i nøkkelboksen med én gang.',
       ],
+      showsKeyBoxCode: true,
       nextNodeId: 'select-season',
     },
     'select-season': {
