@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { normalizeStoredBooking } from '../netlify/functions/_shared/bookings.mts'
+import {
+  formatBookingDateRange,
+  getBookingOwnerDisplayName,
+  hasBookingComment,
+  isBookingOwner,
+} from '../src/bookingDetails'
 import { normalizeBooking, resolveBookingOwner } from '../src/bookings'
 
 const storedBooking = {
@@ -47,5 +53,34 @@ describe('booking normalization', () => {
       'booking-owner--mads',
       'booking-owner--heidi',
     ])
+  })
+
+  it('resolves the current configured owner name', () => {
+    expect(getBookingOwnerDisplayName('anne-jan')).toBe('Anne Marie & Jan')
+  })
+
+  it('shows edit access only to the booking owner', () => {
+    expect(isBookingOwner({ ownerId: 'heidi' }, 'heidi')).toBe(true)
+    expect(isBookingOwner({ ownerId: 'heidi' }, 'mads')).toBe(false)
+  })
+
+  it('hides comments that contain only whitespace', () => {
+    expect(hasBookingComment('')).toBe(false)
+    expect(hasBookingComment('   \n')).toBe(false)
+    expect(hasBookingComment('Ta med ved.')).toBe(true)
+  })
+
+  it('shows the year once for date ranges within the same year', () => {
+    expect(formatBookingDateRange({
+      fromDate: '2026-07-28',
+      toDate: '2026-08-02',
+    })).toBe('28. juli – 2. august 2026')
+  })
+
+  it('shows both years when a date range crosses a year boundary', () => {
+    expect(formatBookingDateRange({
+      fromDate: '2026-12-30',
+      toDate: '2027-01-02',
+    })).toBe('30. desember 2026 – 2. januar 2027')
   })
 })
