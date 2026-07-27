@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
@@ -15,27 +15,16 @@ export default function NewBookingPage() {
   const [partialFamily, setPartialFamily] = useState(false)
   const [comment, setComment] = useState('')
   const [errors, setErrors] = useState<FormErrors>({})
-  const [showSuccess, setShowSuccess] = useState(false)
-  const successTimer = useRef<number | null>(null)
+  const [saveError, setSaveError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const navigate = useNavigate()
   const { currentUser } = useAuth()
 
-  useEffect(() => () => {
-    if (successTimer.current !== null) {
-      window.clearTimeout(successTimer.current)
-    }
-  }, [])
-
-  function clearSuccess() {
-    setShowSuccess(false)
-
-    if (successTimer.current !== null) {
-      window.clearTimeout(successTimer.current)
-      successTimer.current = null
-    }
+  function clearSaveError() {
+    setSaveError('')
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const nextErrors: FormErrors = {}
@@ -51,17 +40,47 @@ export default function NewBookingPage() {
     }
 
     setErrors(nextErrors)
-    clearSuccess()
+    clearSaveError()
 
     if (Object.keys(nextErrors).length > 0) {
       return
     }
 
-    setShowSuccess(true)
-    successTimer.current = window.setTimeout(() => {
-      setShowSuccess(false)
-      successTimer.current = null
-    }, 5000)
+    setIsSaving(true)
+
+    try {
+      const response = await fetch('/.netlify/functions/create-booking', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromDate,
+          toDate,
+          welcomesOthers: welcomeOthers,
+          partialFamily,
+          comment,
+        }),
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { message?: unknown } | null
+        setSaveError(
+          typeof body?.message === 'string'
+            ? body.message
+            : 'Kunne ikke lagre tiden. Prøv igjen.',
+        )
+        return
+      }
+
+      navigate('/booking', { replace: true, state: { bookingCreated: true } })
+    } catch {
+      setSaveError('Kunne ikke lagre tiden. Sjekk forbindelsen og prøv igjen.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -87,7 +106,7 @@ export default function NewBookingPage() {
               onChange={(event) => {
                 setFromDate(event.target.value)
                 setErrors((current) => ({ ...current, fromDate: undefined, toDate: undefined }))
-                clearSuccess()
+                clearSaveError()
               }}
               aria-invalid={Boolean(errors.fromDate)}
               aria-describedby={errors.fromDate ? 'from-date-error date-help' : 'date-help'}
@@ -108,7 +127,7 @@ export default function NewBookingPage() {
               onChange={(event) => {
                 setToDate(event.target.value)
                 setErrors((current) => ({ ...current, toDate: undefined }))
-                clearSuccess()
+                clearSaveError()
               }}
               aria-invalid={Boolean(errors.toDate)}
               aria-describedby={errors.toDate ? 'to-date-error date-help' : 'date-help'}
@@ -127,7 +146,7 @@ export default function NewBookingPage() {
               checked={welcomeOthers}
               onChange={(event) => {
                 setWelcomeOthers(event.target.checked)
-                clearSuccess()
+                clearSaveError()
               }}
             />
             <span>Vi ønsker gjerne flere med oss!</span>
@@ -140,7 +159,7 @@ export default function NewBookingPage() {
               checked={partialFamily}
               onChange={(event) => {
                 setPartialFamily(event.target.checked)
-                clearSuccess()
+                clearSaveError()
               }}
             />
             <span>Ikke hele familien drar</span>
@@ -160,21 +179,19 @@ export default function NewBookingPage() {
             value={comment}
             onChange={(event) => {
               setComment(event.target.value)
-              clearSuccess()
+              clearSaveError()
             }}
           />
         </div>
 
         <div className="booking-form__feedback" aria-live="polite">
-          {showSuccess && (
-            <p className="success-message" role="status">
-              Skjemaet er validert. Ingen opplysninger er lagret ennå.
-            </p>
-          )}
+          {saveError && <p className="error-message" role="alert">{saveError}</p>}
         </div>
 
         <div className="booking-form__actions">
-          <button className="primary-button" type="submit">Lagre</button>
+          <button className="primary-button" type="submit" disabled={isSaving}>
+            {isSaving ? 'Lagrer …' : 'Lagre'}
+          </button>
           <button className="secondary-button" type="button" onClick={() => navigate('/booking')}>
             Avbryt
           </button>

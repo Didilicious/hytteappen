@@ -576,6 +576,12 @@ h1 {
   line-height: 1.45;
 }
 
+.booking-success {
+  width: 100%;
+  max-width: 550px;
+  margin: 24px 0 -28px;
+}
+
 .booking-form__actions {
   display: grid;
   gap: 12px;
