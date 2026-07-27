@@ -66,6 +66,11 @@ export async function createBooking(booking: Booking) {
   await getBookingsStore().setJSON(booking.id, booking)
 }
 
+export async function readBooking(bookingId: string) {
+  const storedBooking = await getBookingsStore().get(bookingId, { type: 'json' })
+  return normalizeStoredBooking(storedBooking)
+}
+
 export async function readBookings() {
   const bookingsStore = getBookingsStore()
   const { blobs } = await bookingsStore.list()

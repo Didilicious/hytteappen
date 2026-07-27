@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { familyMembers } from '../../shared/familyMembers'
 import { normalizeBooking, resolveBookingOwner, type Booking } from '../bookings'
 import {
@@ -12,6 +12,13 @@ import {
   startOfMonth,
 } from '../calendar'
 import AppFrame from '../components/AppFrame'
+import {
+  calendarReturnStorageKey,
+  getBookingDetailsPath,
+  getCalendarPath,
+  parseCalendarMonth,
+  type CalendarReturnState,
+} from '../calendarNavigation'
 
 const monthFormatter = new Intl.DateTimeFormat('nb-NO', { month: 'long', year: 'numeric' })
 const fullDateFormatter = new Intl.DateTimeFormat('nb-NO', {
@@ -48,18 +55,23 @@ function CalendarLoading() {
 
 export default function BookingCalendarPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const today = useMemo(() => new Date(), [])
   const todayKey = formatDateKey(today)
   const currentMonth = startOfMonth(today)
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth)
+  const [selectedMonth, setSelectedMonth] = useState(() => parseCalendarMonth(location.search, today))
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loadingState, setLoadingState] = useState<'loading' | 'ready' | 'error'>('loading')
   const pendingScrollPosition = useRef<{ x: number; y: number } | null>(null)
 
   const changeMonth = useCallback((updateMonth: (month: Date) => Date) => {
     pendingScrollPosition.current = { x: window.scrollX, y: window.scrollY }
-    setSelectedMonth(updateMonth)
-  }, [])
+    setSelectedMonth((month) => {
+      const nextMonth = updateMonth(month)
+      navigate(getCalendarPath(nextMonth), { replace: true })
+      return nextMonth
+    })
+  }, [navigate])
 
   useLayoutEffect(() => {
     const scrollPosition = pendingScrollPosition.current
@@ -107,6 +119,55 @@ export default function BookingCalendarPage() {
   useEffect(() => {
     void loadBookings()
   }, [loadBookings])
+
+  useEffect(() => {
+    const calendarPath = getCalendarPath(selectedMonth)
+    if (`${location.pathname}${location.search}` !== calendarPath) {
+      navigate(calendarPath, { replace: true })
+    }
+  }, [location.pathname, location.search, navigate, selectedMonth])
+
+  useLayoutEffect(() => {
+    if (loadingState !== 'ready') return
+
+    try {
+      const storedValue = window.sessionStorage.getItem(calendarReturnStorageKey)
+      if (!storedValue) return
+
+      const returnState = JSON.parse(storedValue) as Partial<CalendarReturnState>
+      const currentPath = `${location.pathname}${location.search}`
+      if (
+        returnState.path !== currentPath
+        || typeof returnState.scrollX !== 'number'
+        || typeof returnState.scrollY !== 'number'
+      ) return
+
+      window.sessionStorage.removeItem(calendarReturnStorageKey)
+      window.scrollTo(returnState.scrollX, returnState.scrollY)
+      const animationFrame = window.requestAnimationFrame(() => {
+        window.scrollTo(returnState.scrollX as number, returnState.scrollY as number)
+      })
+
+      return () => window.cancelAnimationFrame(animationFrame)
+    } catch {
+      window.sessionStorage.removeItem(calendarReturnStorageKey)
+    }
+  }, [loadingState, location.pathname, location.search])
+
+  const openBooking = useCallback((bookingId: string) => {
+    const calendarPath = getCalendarPath(selectedMonth)
+    const returnState: CalendarReturnState = {
+      path: calendarPath,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    }
+
+    try {
+      window.sessionStorage.setItem(calendarReturnStorageKey, JSON.stringify(returnState))
+    } catch {}
+
+    navigate(getBookingDetailsPath(bookingId), { state: { calendarPath } })
+  }, [navigate, selectedMonth])
 
   const calendarDays = getCalendarDays(selectedMonth)
   const isCurrentMonth = selectedMonth.getFullYear() === currentMonth.getFullYear()
@@ -202,11 +263,13 @@ export default function BookingCalendarPage() {
                       const welcomeText = booking.welcomesOthers ? ', ønsker gjerne flere med' : ''
 
                       return (
-                        <div
+                        <button
+                          type="button"
                           className={classNames}
                           key={booking.id}
-                          aria-label={`${owner.displayName}${welcomeText}`}
+                          aria-label={`Se registreringen til ${owner.displayName}${welcomeText}`}
                           title={`${owner.displayName}${welcomeText}`}
+                          onClick={() => openBooking(booking.id)}
                         >
                           <span className="calendar-owner-marker" aria-hidden="true">{owner.marker}</span>
                           <span className="calendar-booking__compact" aria-hidden="true">{owner.compactName}</span>
@@ -214,7 +277,7 @@ export default function BookingCalendarPage() {
                           {booking.welcomesOthers && (
                             <span className="calendar-booking__welcome" aria-label="Ønsker gjerne flere med">+</span>
                           )}
-                        </div>
+                        </button>
                       )
                     })}
                   </div>

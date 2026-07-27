@@ -8,6 +8,11 @@ import {
   getCalendarDays,
   parseLocalDate,
 } from '../src/calendar'
+import {
+  getBookingDetailsPath,
+  getCalendarPath,
+  parseCalendarMonth,
+} from '../src/calendarNavigation'
 
 function booking(overrides: Partial<Booking>): Booking {
   return {
@@ -78,5 +83,19 @@ describe('calendar dates and navigation', () => {
     expect(date).not.toBeNull()
     expect(date && formatDateKey(date)).toBe('2026-07-10')
     expect(date?.getHours()).toBe(12)
+  })
+
+  it('opens a booking without displaying its ID in calendar copy', () => {
+    expect(getBookingDetailsPath('123e4567-e89b-42d3-a456-426614174000')).toBe(
+      '/booking/123e4567-e89b-42d3-a456-426614174000',
+    )
+  })
+
+  it('preserves the selected month in the calendar URL', () => {
+    const selectedMonth = createLocalDate(2027, 1, 1)
+    const calendarPath = getCalendarPath(selectedMonth)
+
+    expect(calendarPath).toBe('/booking/calendar?month=2027-02')
+    expect(formatDateKey(parseCalendarMonth('?month=2027-02', new Date()))).toBe('2027-02-01')
   })
 })
