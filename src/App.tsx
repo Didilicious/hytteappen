@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth'
+import BookingCalendarPage from './pages/BookingCalendarPage'
 import BookingLandingPage from './pages/BookingLandingPage'
 import BookingPlaceholderPage from './pages/BookingPlaceholderPage'
 import GuidePage from './pages/GuidePage'
@@ -60,7 +61,7 @@ export default function App() {
         path="/booking/calendar"
         element={
           <ProtectedRoute>
-            <BookingPlaceholderPage title="Se hyttekalender" />
+            <BookingCalendarPage />
           </ProtectedRoute>
         }
       />

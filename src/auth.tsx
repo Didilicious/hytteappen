@@ -1,17 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
+import { familyMembers, type FamilyMember } from '../shared/familyMembers'
 
-export type FamilyMember = {
-  id: string
-  displayName: string
-}
-
-export const familyMembers: FamilyMember[] = [
-  { id: 'anne-jan', displayName: 'Anne Marie & Jan' },
-  { id: 'christine', displayName: 'Christine' },
-  { id: 'anette', displayName: 'Anette' },
-  { id: 'mads', displayName: 'Mads' },
-  { id: 'heidi', displayName: 'Heidi' },
-]
+export { familyMembers }
+export type { FamilyMember }
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
