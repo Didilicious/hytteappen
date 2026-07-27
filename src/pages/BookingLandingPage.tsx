@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import AppFrame from '../components/AppFrame'
 
 type BookingAction = {
@@ -42,6 +43,17 @@ function BookingIcon({ icon }: { icon: BookingAction['icon'] }) {
 
 export default function BookingLandingPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const bookingCreated = (location.state as { bookingCreated?: boolean } | null)?.bookingCreated === true
+  const [showSuccess, setShowSuccess] = useState(bookingCreated)
+
+  useEffect(() => {
+    if (!showSuccess) return
+
+    navigate(location.pathname, { replace: true, state: null })
+    const timer = window.setTimeout(() => setShowSuccess(false), 5000)
+    return () => window.clearTimeout(timer)
+  }, [location.pathname, navigate, showSuccess])
 
   return (
     <AppFrame showAccount>
@@ -55,6 +67,12 @@ export default function BookingLandingPage() {
         <h1>Booke hyttetid</h1>
         <p>Hva ønsker du å gjøre?</p>
       </div>
+
+      {showSuccess && (
+        <p className="success-message booking-success" role="status">
+          Tiden er registrert.
+        </p>
+      )}
 
       <div className="booking-actions page-enter page-enter--delay">
         {bookingActions.map((action) => (
