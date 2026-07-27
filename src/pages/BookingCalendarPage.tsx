@@ -1,0 +1,233 @@
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { familyMembers } from '../../shared/familyMembers'
+import { normalizeBooking, resolveBookingOwner, type Booking } from '../bookings'
+import {
+  addMonths,
+  formatDateKey,
+  getBookingsForDate,
+  getCalendarDays,
+  hasBookingsInMonth,
+  norwegianWeekdays,
+  startOfMonth,
+} from '../calendar'
+import AppFrame from '../components/AppFrame'
+
+const monthFormatter = new Intl.DateTimeFormat('nb-NO', { month: 'long', year: 'numeric' })
+const fullDateFormatter = new Intl.DateTimeFormat('nb-NO', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+function MonthButton({ direction, onClick }: { direction: 'previous' | 'next'; onClick: () => void }) {
+  const isPrevious = direction === 'previous'
+  return (
+    <button
+      className="calendar-icon-button"
+      type="button"
+      onClick={onClick}
+      aria-label={isPrevious ? 'Forrige måned' : 'Neste måned'}
+    >
+      <span aria-hidden="true">{isPrevious ? '←' : '→'}</span>
+    </button>
+  )
+}
+
+function CalendarLoading() {
+  return (
+    <div className="calendar-loading" role="status" aria-live="polite">
+      <span className="calendar-loading__title">Henter registrerte tider …</span>
+      <div className="calendar-skeleton" aria-hidden="true">
+        {Array.from({ length: 35 }, (_, index) => <span key={index} />)}
+      </div>
+    </div>
+  )
+}
+
+export default function BookingCalendarPage() {
+  const navigate = useNavigate()
+  const today = useMemo(() => new Date(), [])
+  const todayKey = formatDateKey(today)
+  const currentMonth = startOfMonth(today)
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth)
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [loadingState, setLoadingState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const pendingScrollPosition = useRef<{ x: number; y: number } | null>(null)
+
+  const changeMonth = useCallback((updateMonth: (month: Date) => Date) => {
+    pendingScrollPosition.current = { x: window.scrollX, y: window.scrollY }
+    setSelectedMonth(updateMonth)
+  }, [])
+
+  useLayoutEffect(() => {
+    const scrollPosition = pendingScrollPosition.current
+    if (!scrollPosition) return
+
+    window.scrollTo(scrollPosition.x, scrollPosition.y)
+    const animationFrame = window.requestAnimationFrame(() => {
+      window.scrollTo(scrollPosition.x, scrollPosition.y)
+      pendingScrollPosition.current = null
+    })
+
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [selectedMonth])
+
+  const loadBookings = useCallback(async () => {
+    setLoadingState('loading')
+
+    try {
+      const response = await fetch('/.netlify/functions/read-bookings', {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      })
+
+      if (response.status === 401) {
+        window.location.replace('/login')
+        return
+      }
+
+      if (!response.ok) throw new Error('Failed to load bookings')
+
+      const body = await response.json() as { bookings?: unknown }
+      if (!Array.isArray(body.bookings)) throw new Error('Invalid booking response')
+
+      setBookings(
+        body.bookings
+          .map(normalizeBooking)
+          .filter((booking): booking is Booking => booking !== null),
+      )
+      setLoadingState('ready')
+    } catch {
+      setLoadingState('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadBookings()
+  }, [loadBookings])
+
+  const calendarDays = getCalendarDays(selectedMonth)
+  const isCurrentMonth = selectedMonth.getFullYear() === currentMonth.getFullYear()
+    && selectedMonth.getMonth() === currentMonth.getMonth()
+
+  return (
+    <AppFrame showAccount>
+      <button className="back-button" type="button" onClick={() => navigate('/booking')}>
+        <span aria-hidden="true">←</span>
+        Tilbake til booking
+      </button>
+
+      <div className="calendar-heading page-enter">
+        <p className="eyebrow">Hyttekalender</p>
+        <h1>Se hyttekalender</h1>
+        <p>Her ser du hvem som har registrert tid på hytta.</p>
+      </div>
+
+      {loadingState === 'loading' && <CalendarLoading />}
+
+      {loadingState === 'error' && (
+        <div className="calendar-error" role="alert">
+          <p>Kunne ikke hente hyttekalenderen. Sjekk forbindelsen og prøv igjen.</p>
+          <button className="secondary-button" type="button" onClick={() => void loadBookings()}>
+            Prøv igjen
+          </button>
+        </div>
+      )}
+
+      {loadingState === 'ready' && (
+        <section className="calendar-section page-enter page-enter--delay" aria-labelledby="calendar-month-title">
+          <div className="calendar-toolbar">
+            <MonthButton direction="previous" onClick={() => changeMonth((month) => addMonths(month, -1))} />
+            <h2 id="calendar-month-title" aria-live="polite">{monthFormatter.format(selectedMonth)}</h2>
+            <MonthButton direction="next" onClick={() => changeMonth((month) => addMonths(month, 1))} />
+            <button
+              className="calendar-today-button"
+              type="button"
+              disabled={isCurrentMonth}
+              onClick={() => changeMonth(() => currentMonth)}
+            >
+              I dag
+            </button>
+          </div>
+
+          <div className="calendar-legend" aria-label="Familier i kalenderen">
+            {familyMembers.map((familyMember) => {
+              const owner = resolveBookingOwner(familyMember.id)
+              return (
+                <span className={`calendar-legend__item ${owner.styleClass}`} key={familyMember.id}>
+                  <span className="calendar-owner-marker" aria-hidden="true">
+                    {owner.marker}
+                  </span>
+                  <span className="calendar-legend__name calendar-legend__name--full">
+                    {familyMember.displayName}
+                  </span>
+                  <span className="calendar-legend__name calendar-legend__name--compact">
+                    {owner.legendName}
+                  </span>
+                </span>
+              )
+            })}
+          </div>
+
+          <div className="calendar-grid" role="grid" aria-labelledby="calendar-month-title">
+            {norwegianWeekdays.map((weekday) => (
+              <div className="calendar-weekday" role="columnheader" key={weekday}>{weekday}</div>
+            ))}
+
+            {calendarDays.map((calendarDay) => {
+              const dayBookings = getBookingsForDate(bookings, calendarDay.dateKey)
+              const weekday = calendarDay.date.getDay()
+
+              return (
+                <div
+                  className={`calendar-day${calendarDay.isCurrentMonth ? '' : ' calendar-day--outside'}${calendarDay.dateKey === todayKey ? ' calendar-day--today' : ''}`}
+                  role="gridcell"
+                  aria-label={fullDateFormatter.format(calendarDay.date)}
+                  key={calendarDay.dateKey}
+                >
+                  <time dateTime={calendarDay.dateKey}>{calendarDay.date.getDate()}</time>
+                  <div className="calendar-day__bookings">
+                    {dayBookings.map((booking) => {
+                      const owner = resolveBookingOwner(booking.ownerId)
+                      const continuesBefore = booking.fromDate < calendarDay.dateKey && weekday !== 1
+                      const continuesAfter = booking.toDate > calendarDay.dateKey && weekday !== 0
+                      const classNames = [
+                        'calendar-booking',
+                        owner.styleClass,
+                        continuesBefore ? 'calendar-booking--continues-before' : '',
+                        continuesAfter ? 'calendar-booking--continues-after' : '',
+                      ].filter(Boolean).join(' ')
+                      const welcomeText = booking.welcomesOthers ? ', ønsker gjerne flere med' : ''
+
+                      return (
+                        <div
+                          className={classNames}
+                          key={booking.id}
+                          aria-label={`${owner.displayName}${welcomeText}`}
+                          title={`${owner.displayName}${welcomeText}`}
+                        >
+                          <span className="calendar-owner-marker" aria-hidden="true">{owner.marker}</span>
+                          <span className="calendar-booking__compact" aria-hidden="true">{owner.compactName}</span>
+                          <span className="calendar-booking__full" aria-hidden="true">{owner.displayName}</span>
+                          {booking.welcomesOthers && (
+                            <span className="calendar-booking__welcome" aria-label="Ønsker gjerne flere med">+</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {!hasBookingsInMonth(bookings, selectedMonth) && (
+            <p className="calendar-empty" role="status">Ingen registrerte tider denne måneden.</p>
+          )}
+        </section>
+      )}
+    </AppFrame>
+  )
+}

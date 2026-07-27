@@ -1,28 +1,14 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { getFamilyMember, type FamilyMember } from '../../../shared/familyMembers.ts'
 
-export type FamilyMember = {
-  id: string
-  displayName: string
-}
+export type { FamilyMember }
 
 type SessionPayload = {
   accountId: string
   expiresAt: number
 }
 
-export function getFamilyMember(accountId: unknown): FamilyMember | null {
-  if (typeof accountId !== 'string') return null
-
-  const familyMembers: Record<string, FamilyMember> = {
-    'anne-jan': { id: 'anne-jan', displayName: 'Anne Marie & Jan' },
-    christine: { id: 'christine', displayName: 'Christine' },
-    anette: { id: 'anette', displayName: 'Anette' },
-    mads: { id: 'mads', displayName: 'Mads' },
-    heidi: { id: 'heidi', displayName: 'Heidi' },
-  }
-
-  return familyMembers[accountId] ?? null
-}
+export { getFamilyMember }
 
 export function getRequiredSecret(name: 'FAMILY_PASSWORD' | 'SESSION_SECRET') {
   const value = process.env[name]

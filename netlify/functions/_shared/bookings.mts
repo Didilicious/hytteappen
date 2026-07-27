@@ -1,9 +1,8 @@
 import { getStore } from '@netlify/blobs'
-import type { FamilyMember } from './session.mts'
 
 export type Booking = {
   id: string
-  owner: FamilyMember
+  ownerId: string
   fromDate: string
   toDate: string
   welcomesOthers: boolean
@@ -13,26 +12,54 @@ export type Booking = {
   updatedAt: string
 }
 
+type LegacyOwner = {
+  id?: unknown
+  displayName?: unknown
+}
+
+type StoredBooking = Partial<Booking> & {
+  owner?: LegacyOwner
+}
+
 function getBookingsStore() {
   return getStore('bookings')
 }
 
-function isBooking(value: unknown): value is Booking {
-  if (!value || typeof value !== 'object') return false
+export function normalizeStoredBooking(value: unknown): Booking | null {
+  if (!value || typeof value !== 'object') return null
 
-  const booking = value as Partial<Booking>
-  return (
-    typeof booking.id === 'string'
-    && typeof booking.owner?.id === 'string'
-    && typeof booking.owner.displayName === 'string'
-    && typeof booking.fromDate === 'string'
-    && typeof booking.toDate === 'string'
-    && typeof booking.welcomesOthers === 'boolean'
-    && typeof booking.partialFamily === 'boolean'
-    && typeof booking.comment === 'string'
-    && typeof booking.createdAt === 'string'
-    && typeof booking.updatedAt === 'string'
-  )
+  const storedBooking = value as StoredBooking
+  const ownerId = typeof storedBooking.ownerId === 'string'
+    ? storedBooking.ownerId
+    : typeof storedBooking.owner?.id === 'string'
+      ? storedBooking.owner.id
+      : null
+
+  if (
+    typeof storedBooking.id !== 'string'
+    || !ownerId
+    || typeof storedBooking.fromDate !== 'string'
+    || typeof storedBooking.toDate !== 'string'
+    || typeof storedBooking.welcomesOthers !== 'boolean'
+    || typeof storedBooking.partialFamily !== 'boolean'
+    || typeof storedBooking.comment !== 'string'
+    || typeof storedBooking.createdAt !== 'string'
+    || typeof storedBooking.updatedAt !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    id: storedBooking.id,
+    ownerId,
+    fromDate: storedBooking.fromDate,
+    toDate: storedBooking.toDate,
+    welcomesOthers: storedBooking.welcomesOthers,
+    partialFamily: storedBooking.partialFamily,
+    comment: storedBooking.comment,
+    createdAt: storedBooking.createdAt,
+    updatedAt: storedBooking.updatedAt,
+  }
 }
 
 export async function createBooking(booking: Booking) {
@@ -47,6 +74,7 @@ export async function readBookings() {
   )
 
   return storedBookings
-    .filter(isBooking)
+    .map(normalizeStoredBooking)
+    .filter((booking): booking is Booking => booking !== null)
     .sort((first, second) => first.createdAt.localeCompare(second.createdAt))
 }

@@ -1,21 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import type { Config } from '@netlify/functions'
+import { prepareBooking, type BookingInput } from './_shared/booking-input.mts'
 import { createBooking } from './_shared/bookings.mts'
 import {
   clearSessionCookie,
   getAuthenticatedFamilyMember,
   jsonResponse,
 } from './_shared/session.mts'
-
-type BookingInput = {
-  fromDate?: unknown
-  toDate?: unknown
-  welcomesOthers?: unknown
-  partialFamily?: unknown
-  comment?: unknown
-}
-
-const datePattern = /^\d{4}-\d{2}-\d{2}$/
 
 export default async function createBookingFunction(request: Request) {
   if (request.method !== 'POST') {
@@ -32,35 +23,15 @@ export default async function createBookingFunction(request: Request) {
       )
     }
 
-    const body = await request.json() as BookingInput
-    const { fromDate, toDate, welcomesOthers, partialFamily } = body
-    const comment = body.comment ?? ''
-
-    if (
-      typeof fromDate !== 'string'
-      || !datePattern.test(fromDate)
-      || typeof toDate !== 'string'
-      || !datePattern.test(toDate)
-      || toDate < fromDate
-      || typeof welcomesOthers !== 'boolean'
-      || typeof partialFamily !== 'boolean'
-      || typeof comment !== 'string'
-      || comment.length > 1000
-    ) {
-      return jsonResponse({ message: 'Kontroller opplysningene og prøv igjen.' }, { status: 400 })
-    }
-
     const timestamp = new Date().toISOString()
-    const booking = {
+    const booking = prepareBooking(await request.json() as BookingInput, {
       id: randomUUID(),
-      owner: familyMember,
-      fromDate,
-      toDate,
-      welcomesOthers,
-      partialFamily,
-      comment,
-      createdAt: timestamp,
-      updatedAt: timestamp,
+      ownerId: familyMember.id,
+      timestamp,
+    })
+
+    if (!booking) {
+      return jsonResponse({ message: 'Kontroller opplysningene og prøv igjen.' }, { status: 400 })
     }
 
     await createBooking(booking)
