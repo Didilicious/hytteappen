@@ -6,6 +6,7 @@ import GuideLayout from '../components/GuideLayout'
 import type { GuideNode, InstructionNode, QuestionNode } from '../guideData'
 import { guides } from '../guideData'
 import { loadGuideContent, type GuideContentLoadState } from '../guideContent'
+import { loadGuideImages, type GuideImagesLoadState } from '../guideImages'
 import {
   buildActivePath,
   getInstructionStatus,
@@ -92,18 +93,20 @@ function ResetGuideDialog({
 
 function QuestionContent({
   content,
+  imageState,
   node,
   onAnswer,
   selectedOptionId,
 }: {
   content: GuideContent
+  imageState: GuideImagesLoadState
   node: QuestionNode
   onAnswer: (optionId: string, nextNodeId: string) => void
   selectedOptionId?: string
 }) {
   return (
     <div className="guide-body page-enter page-enter--delay">
-      <GuideContentSections content={content} />
+      <GuideContentSections content={content} imageState={imageState} />
       <div className="option-list">
         {node.options.map((option, index) => (
           <button
@@ -131,18 +134,20 @@ function QuestionContent({
 
 function InstructionContent({
   content,
+  imageState,
   node,
   status,
   onStatusChange,
 }: {
   content: GuideContent
+  imageState: GuideImagesLoadState
   node: InstructionNode
   status?: InstructionStatus
   onStatusChange: (status?: InstructionStatus) => void
 }) {
   return (
     <div className="guide-body page-enter page-enter--delay">
-      <GuideContentSections content={content} />
+      <GuideContentSections content={content} imageState={imageState} />
 
       <div className="instruction-actions" aria-label="Status for steget">
         <button className="primary-button" type="button" onClick={() => onStatusChange('completed')}>
@@ -209,6 +214,7 @@ export default function GuidePage() {
   const navigate = useNavigate()
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [contentState, setContentState] = useState<GuideContentLoadState>({ status: 'loading' })
+  const [imageState, setImageState] = useState<GuideImagesLoadState>({ status: 'loading' })
   const guide = guideId ? guides[guideId] : undefined
   const {
     answers,
@@ -223,7 +229,16 @@ export default function GuidePage() {
 
     loadGuideContent()
       .then((contentById) => {
-        if (isActive) setContentState({ status: 'loaded', contentById })
+        if (!isActive) return
+        setContentState({ status: 'loaded', contentById })
+
+        loadGuideImages(contentById)
+          .then((imagesByGroup) => {
+            if (isActive) setImageState({ status: 'loaded', imagesByGroup })
+          })
+          .catch(() => {
+            if (isActive) setImageState({ status: 'error' })
+          })
       })
       .catch((error: Error & { kind?: string }) => {
         if (isActive) {
@@ -371,6 +386,7 @@ export default function GuidePage() {
       {node.type === 'question' && (
         <QuestionContent
           content={content as GuideContent}
+          imageState={imageState}
           node={node}
           selectedOptionId={getSelectedOption(node, answers)?.id}
           onAnswer={(optionId, nextNodeId) => {
@@ -390,6 +406,7 @@ export default function GuidePage() {
       {node.type === 'instruction' && (
         <InstructionContent
           content={content as GuideContent}
+          imageState={imageState}
           node={node}
           status={progress[node.id]}
           onStatusChange={handleInstructionStatus}
