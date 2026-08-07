@@ -1,31 +1,32 @@
+import type { GuideContentId } from '../shared/guideContent'
+
 export type GuideNodeType = 'instruction' | 'question' | 'completion'
 
 export type GuideNodeBase<Type extends GuideNodeType> = {
   id: string
   type: Type
-  title: string
   nextNodeId?: string
+  contentId?: GuideContentId
 }
 
 export type GuideOption = {
   id: string
-  label: string
   nextNodeId?: string
   disabled?: boolean
 }
 
 export type QuestionNode = GuideNodeBase<'question'> & {
-  prompt?: string
+  contentId: GuideContentId
   options: GuideOption[]
 }
 
 export type InstructionNode = GuideNodeBase<'instruction'> & {
-  paragraphs: string[]
+  contentId: GuideContentId
   nextNodeId: string
-  showsKeyBoxCode?: boolean
 }
 
 export type CompletionNode = GuideNodeBase<'completion'> & {
+  title: string
   paragraphs: string[]
   actionLabel: string
   nextPath: string
@@ -62,37 +63,30 @@ const openCabinGuide: GuideDefinition = {
     'get-key': {
       id: 'get-key',
       type: 'instruction',
-      title: 'Hent nøkkelen',
-      paragraphs: [
-        'Åpne nøkkelboksen som er plassert til høyre for den gamle ytterdøren.',
-        'Lås opp den nye ytterdøren, og legg nøkkelen tilbake i nøkkelboksen med én gang.',
-      ],
-      showsKeyBoxCode: true,
+      contentId: 'nokkelboks',
       nextNodeId: 'select-season',
     },
     'select-season': {
       id: 'select-season',
       type: 'question',
-      title: 'Hvilken tid på året er det nå?',
+      contentId: 'aarstid',
       options: [
-        { id: 'winter', label: 'Vinter', nextNodeId: 'turn-on-power' },
-        { id: 'spring', label: 'Vår / tidlig sommer', disabled: true },
-        { id: 'summer', label: 'Sommer', nextNodeId: 'summer-prototype-complete' },
-        { id: 'autumn', label: 'Høst / tidlig vinter', disabled: true },
+        { id: 'winter', nextNodeId: 'turn-on-power' },
+        { id: 'spring', disabled: true },
+        { id: 'summer', nextNodeId: 'summer-prototype-complete' },
+        { id: 'autumn', disabled: true },
       ],
     },
     'turn-on-power': {
       id: 'turn-on-power',
       type: 'instruction',
-      title: 'Slå på strømmen',
-      paragraphs: ['Slå på hovedstrømmen, og kontroller at hytta får strøm.'],
+      contentId: 'strom',
       nextNodeId: 'check-dishwasher-valve',
     },
     'check-dishwasher-valve': {
       id: 'check-dishwasher-valve',
       type: 'instruction',
-      title: 'Kontroller stoppekranen til oppvaskmaskinen',
-      paragraphs: ['Kontroller at stoppekranen til oppvaskmaskinen står i riktig posisjon.'],
+      contentId: 'skru-pa-vann',
       nextNodeId: 'test-complete',
     },
     'test-complete': {

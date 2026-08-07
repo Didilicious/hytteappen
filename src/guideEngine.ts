@@ -48,9 +48,8 @@ export function getLogicalPreviousNodeId(
   return currentIndex > 0 ? activePath[currentIndex - 1].id : undefined
 }
 
-export function getQuestionStatus(node: QuestionNode, answers: GuideAnswers) {
-  const selectedOption = getSelectedOption(node, answers)
-  return selectedOption ? `Valgt svar: ${selectedOption.label}` : 'Ikke besvart'
+export function getQuestionStatus(selectedAnswerLabel?: string) {
+  return selectedAnswerLabel ? `Valgt svar: ${selectedAnswerLabel}` : 'Ikke besvart'
 }
 
 export function getInstructionStatus(
