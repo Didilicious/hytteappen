@@ -1,16 +1,25 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import type { GuideContent } from '../../shared/guideContent'
+import GuideContentSections from '../components/GuideContentSections'
 import GuideLayout from '../components/GuideLayout'
 import type { GuideNode, InstructionNode, QuestionNode } from '../guideData'
 import { guides } from '../guideData'
+import { loadGuideContent, type GuideContentLoadState } from '../guideContent'
 import {
   buildActivePath,
   getInstructionStatus,
-  getLogicalPreviousNodeId,
   getQuestionStatus,
   getSelectedOption,
   type InstructionStatus,
 } from '../guideEngine'
+import {
+  buildVisiblePath,
+  getContentForNode,
+  getNodeTitle,
+  getSelectedAnswerLabel,
+  validateGuideContent,
+} from '../guideRequirements'
 import { useGuideState } from '../guideStorage'
 
 function GuideBackButton({ onClick }: { onClick: () => void }) {
@@ -82,126 +91,91 @@ function ResetGuideDialog({
 }
 
 function QuestionContent({
+  content,
   node,
   onAnswer,
   selectedOptionId,
 }: {
+  content: GuideContent
   node: QuestionNode
   onAnswer: (optionId: string, nextNodeId: string) => void
   selectedOptionId?: string
 }) {
   return (
-    <div className="option-list page-enter page-enter--delay">
-      {node.options.map((option, index) => (
-        <button
-          className={`option-button${selectedOptionId === option.id ? ' option-button--selected' : ''}`}
-          type="button"
-          disabled={option.disabled || !option.nextNodeId}
-          key={option.id}
-          onClick={() => option.nextNodeId && onAnswer(option.id, option.nextNodeId)}
-        >
-          <span className="option-button__index">{String(index + 1).padStart(2, '0')}</span>
-          <span className="option-button__copy">
-            <span>{option.label}</span>
-            {(option.disabled || !option.nextNodeId) && <small>Kommer senere</small>}
-          </span>
-          {selectedOptionId === option.id && <span className="option-button__status">Valgt</span>}
-          {!option.disabled && selectedOptionId !== option.id && (
-            <span className="option-button__arrow" aria-hidden="true">→</span>
-          )}
-        </button>
-      ))}
+    <div className="guide-body page-enter page-enter--delay">
+      <GuideContentSections content={content} />
+      <div className="option-list">
+        {node.options.map((option, index) => (
+          <button
+            className={`option-button${selectedOptionId === option.id ? ' option-button--selected' : ''}`}
+            type="button"
+            disabled={option.disabled || !option.nextNodeId}
+            key={option.id}
+            onClick={() => option.nextNodeId && onAnswer(option.id, option.nextNodeId)}
+          >
+            <span className="option-button__index">{String(index + 1).padStart(2, '0')}</span>
+            <span className="option-button__copy">
+              <span>{content.answerOptions[index]}</span>
+              {(option.disabled || !option.nextNodeId) && <small>Kommer senere</small>}
+            </span>
+            {selectedOptionId === option.id && <span className="option-button__status">Valgt</span>}
+            {!option.disabled && selectedOptionId !== option.id && (
+              <span className="option-button__arrow" aria-hidden="true">→</span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
 
-type KeyBoxCodeState =
-  | { status: 'loading' }
-  | { status: 'loaded'; code: string }
-  | { status: 'error' }
-
-function KeyBoxCodeParagraph() {
-  const [codeState, setCodeState] = useState<KeyBoxCodeState>({ status: 'loading' })
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    async function loadCode() {
-      try {
-        const response = await fetch('/.netlify/functions/key-box-code', {
-          credentials: 'include',
-          headers: { Accept: 'application/json' },
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          setCodeState({ status: 'error' })
-          return
-        }
-
-        const body = await response.json() as { code?: unknown }
-        if (typeof body.code !== 'string' || !body.code) {
-          setCodeState({ status: 'error' })
-          return
-        }
-
-        setCodeState({ status: 'loaded', code: body.code })
-      } catch (error) {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) {
-          setCodeState({ status: 'error' })
-        }
-      }
-    }
-
-    void loadCode()
-
-    return () => controller.abort()
-  }, [])
-
-  if (codeState.status === 'loaded') {
-    return <p aria-live="polite">Koden er {codeState.code}.</p>
-  }
-
-  if (codeState.status === 'error') {
-    return <p className="instruction-error" role="alert">Kunne ikke hente koden. Prøv igjen senere.</p>
-  }
-
-  return <p aria-live="polite">Henter koden …</p>
-}
-
 function InstructionContent({
+  content,
   node,
   status,
   onStatusChange,
 }: {
+  content: GuideContent
   node: InstructionNode
   status?: InstructionStatus
   onStatusChange: (status?: InstructionStatus) => void
 }) {
   return (
     <div className="guide-body page-enter page-enter--delay">
-      <div className="instruction-card">
-        {node.paragraphs.map((paragraph, index) => (
-          <Fragment key={paragraph}>
-            <p>{paragraph}</p>
-            {node.showsKeyBoxCode && index === 0 && <KeyBoxCodeParagraph />}
-          </Fragment>
-        ))}
-      </div>
+      <GuideContentSections content={content} />
 
       <div className="instruction-actions" aria-label="Status for steget">
         <button className="primary-button" type="button" onClick={() => onStatusChange('completed')}>
           Ferdig
         </button>
-        <button className="secondary-button" type="button" onClick={() => onStatusChange('skipped')}>
-          Hopp over for nå
-        </button>
+        {content.canSkip && (
+          <button className="secondary-button" type="button" onClick={() => onStatusChange('skipped')}>
+            Hopp over for nå
+          </button>
+        )}
         {status && (
           <button className="text-button" type="button" onClick={() => onStatusChange(undefined)}>
             Marker som ikke ferdig
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+function GuideContentError({ kind }: { kind: 'load' | 'configuration' }) {
+  return (
+    <div className="guide-content-error page-enter" role="alert">
+      <p className="eyebrow">Guideinnhold</p>
+      <h1>{kind === 'configuration' ? 'Guiden er feil konfigurert' : 'Kunne ikke laste guiden'}</h1>
+      <p>
+        {kind === 'configuration'
+          ? 'En publisert rad mangler eller inneholder ugyldige verdier. Kontakt den som vedlikeholder guiden.'
+          : 'Google-regnearket er ikke tilgjengelig akkurat nå. Oppdater siden og prøv igjen.'}
+      </p>
+      <button className="secondary-button" type="button" onClick={() => window.location.reload()}>
+        Oppdater siden
+      </button>
     </div>
   )
 }
@@ -234,6 +208,7 @@ export default function GuidePage() {
   const { guideId, nodeId } = useParams()
   const navigate = useNavigate()
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
+  const [contentState, setContentState] = useState<GuideContentLoadState>({ status: 'loading' })
   const guide = guideId ? guides[guideId] : undefined
   const {
     answers,
@@ -243,11 +218,50 @@ export default function GuidePage() {
     resetGuideState,
   } = useGuideState(guideId ?? '')
 
+  useEffect(() => {
+    let isActive = true
+
+    loadGuideContent()
+      .then((contentById) => {
+        if (isActive) setContentState({ status: 'loaded', contentById })
+      })
+      .catch((error: Error & { kind?: string }) => {
+        if (isActive) {
+          setContentState({
+            status: 'error',
+            kind: error.kind === 'configuration' ? 'configuration' : 'load',
+          })
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
   if (!guide) {
     return <Navigate to="/" replace />
   }
 
+  if (contentState.status === 'loading') {
+    return (
+      <GuideLayout guide={guide}>
+        <p className="guide-loading" aria-live="polite">Henter guideinnhold …</p>
+      </GuideLayout>
+    )
+  }
+
+  if (contentState.status === 'error') {
+    return <GuideLayout guide={guide}><GuideContentError kind={contentState.kind} /></GuideLayout>
+  }
+
+  const { contentById } = contentState
+  if (!validateGuideContent(guide, contentById)) {
+    return <GuideLayout guide={guide}><GuideContentError kind="configuration" /></GuideLayout>
+  }
+
   const activePath = buildActivePath(guide, answers)
+  const visiblePath = buildVisiblePath(guide, answers, contentById)
   const isOverview = !nodeId || nodeId === 'overview'
   const currentGuideId = guide.id
 
@@ -256,7 +270,7 @@ export default function GuidePage() {
   }
 
   if (isOverview) {
-    const visibleNodes = activePath.filter((node) => node.type !== 'completion')
+    const visibleNodes = visiblePath.filter((node) => node.type !== 'completion')
 
     return (
       <GuideLayout guide={guide}>
@@ -269,7 +283,7 @@ export default function GuidePage() {
         <ol className="overview-list page-enter page-enter--delay">
           {visibleNodes.map((node, index) => {
             const status = node.type === 'question'
-              ? getQuestionStatus(node, answers)
+              ? getQuestionStatus(getSelectedAnswerLabel(node, answers, contentById))
               : getInstructionStatus(node.id, progress)
 
             return (
@@ -277,7 +291,7 @@ export default function GuidePage() {
                 <button className="overview-item" type="button" onClick={() => navigate(nodePath(node.id))}>
                   <span className="overview-item__number">{String(index + 1).padStart(2, '0')}</span>
                   <span className="overview-item__copy">
-                    <strong>{node.title}</strong>
+                    <strong>{getNodeTitle(node, contentById)}</strong>
                     <span className={`overview-status ${getOverviewStatusClass(status)}`}>{status}</span>
                   </span>
                   <span className="overview-item__arrow" aria-hidden="true">→</span>
@@ -311,14 +325,21 @@ export default function GuidePage() {
   }
 
   const node = guide.nodes[nodeId]
-  const isVisible = activePath.some((pathNode) => pathNode.id === nodeId)
+  const isVisible = visiblePath.some((pathNode) => pathNode.id === nodeId)
 
   if (!node || !isVisible) {
-    const fallbackNode = activePath.at(-1)
+    const activeIndex = activePath.findIndex((pathNode) => pathNode.id === nodeId)
+    const visibleIds = new Set(visiblePath.map((pathNode) => pathNode.id))
+    const fallbackNode = activeIndex >= 0
+      ? activePath.slice(activeIndex + 1).find((pathNode) => visibleIds.has(pathNode.id))
+        ?? activePath.slice(0, activeIndex).reverse().find((pathNode) => visibleIds.has(pathNode.id))
+      : visiblePath.at(-1)
     return <Navigate to={fallbackNode ? nodePath(fallbackNode.id) : '/'} replace />
   }
 
-  const previousNodeId = getLogicalPreviousNodeId(guide, answers, node.id)
+  const visibleNodeIndex = visiblePath.findIndex((pathNode) => pathNode.id === node.id)
+  const previousNodeId = visibleNodeIndex > 0 ? visiblePath[visibleNodeIndex - 1].id : undefined
+  const content = getContentForNode(node, contentById)
 
   function handleBack() {
     navigate(previousNodeId ? nodePath(previousNodeId) : '/')
@@ -328,7 +349,8 @@ export default function GuidePage() {
     saveInstructionStatus(node.id, status)
 
     if (status && node.type === 'instruction') {
-      navigate(nodePath(node.nextNodeId))
+      const nextNode = visiblePath[visibleNodeIndex + 1]
+      navigate(nextNode ? nodePath(nextNode.id) : '/')
     }
   }
 
@@ -340,7 +362,7 @@ export default function GuidePage() {
         <p className="eyebrow">
           {node.type === 'question' ? 'Velg det som passer' : node.type === 'instruction' ? 'Guide-steg' : 'Godt jobbet'}
         </p>
-        <h1>{node.title}</h1>
+        <h1>{getNodeTitle(node, contentById)}</h1>
         {node.type === 'instruction' && (
           <p className="node-status">Status: {getInstructionStatus(node.id, progress)}</p>
         )}
@@ -348,17 +370,26 @@ export default function GuidePage() {
 
       {node.type === 'question' && (
         <QuestionContent
+          content={content as GuideContent}
           node={node}
           selectedOptionId={getSelectedOption(node, answers)?.id}
           onAnswer={(optionId, nextNodeId) => {
             saveAnswer(node.id, optionId)
-            navigate(nodePath(nextNodeId))
+            const nextPath = buildVisiblePath(
+              guide,
+              { ...answers, [node.id]: optionId },
+              contentById,
+            )
+            const nextIndex = nextPath.findIndex((pathNode) => pathNode.id === node.id)
+            const nextNode = nextPath[nextIndex + 1]
+            navigate(nodePath(nextNode?.id ?? nextNodeId))
           }}
         />
       )}
 
       {node.type === 'instruction' && (
         <InstructionContent
+          content={content as GuideContent}
           node={node}
           status={progress[node.id]}
           onStatusChange={handleInstructionStatus}

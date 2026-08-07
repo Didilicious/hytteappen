@@ -1385,6 +1385,163 @@ h1 {
   margin-top: 44px;
 }
 
+.guide-loading {
+  margin: 48px 0 0;
+  color: var(--moss);
+  font-weight: 700;
+}
+
+.guide-content-error {
+  display: grid;
+  gap: 18px;
+  max-width: 620px;
+  margin-top: 48px;
+  padding: 28px;
+  border: 1px solid #d8b8ad;
+  border-radius: 16px;
+  background: #fff8f3;
+}
+
+.guide-content-error h1,
+.guide-content-error p {
+  margin: 0;
+}
+
+.guide-sections {
+  display: grid;
+  gap: 14px;
+}
+
+.guide-compact-card,
+.guide-main-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fffdf8;
+  box-shadow: 0 14px 36px rgb(38 56 47 / 8%);
+}
+
+.guide-compact-card {
+  padding: 16px 18px;
+}
+
+.guide-compact-card h2,
+.guide-main-card h2 {
+  margin: 0 0 7px;
+  color: var(--forest);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.guide-compact-card p,
+.guide-main-card p,
+.guide-main-card li {
+  margin: 0;
+  color: #3c483f;
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.guide-warning-card {
+  border-color: #d8aa75;
+  background: #fff4dd;
+  box-shadow: 0 9px 24px rgb(103 67 30 / 8%);
+}
+
+.guide-warning-card h2 {
+  color: #814b21;
+}
+
+.guide-images {
+  display: grid;
+  gap: 12px;
+}
+
+.guide-images img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 14px 34px rgb(38 56 47 / 12%);
+}
+
+.guide-main-card {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 22px 27px 28px;
+  border-radius: 4px 16px 16px 4px;
+}
+
+.guide-main-card::before {
+  position: absolute;
+  inset: -1px auto -1px -1px;
+  width: 6px;
+  border-radius: 4px 0 0 4px;
+  background: var(--clay);
+  content: "";
+}
+
+.guide-main-card__location {
+  padding-bottom: 19px;
+  border-bottom: 1px solid #e0dbd0;
+}
+
+.guide-main-card__location h2 {
+  color: var(--clay-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guide-main-card__steps {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: guide-step;
+}
+
+.guide-main-card__location + .guide-main-card__steps {
+  margin-top: 5px;
+}
+
+.guide-main-card__steps li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 17px 0;
+  border-bottom: 1px solid #e8e2d7;
+  counter-increment: guide-step;
+}
+
+.guide-main-card__steps li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.guide-main-card__steps li::before {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fffaf0;
+  background: var(--forest);
+  content: counter(guide-step);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.guide-checkpoint-card {
+  border-color: #c8d3c5;
+  background: #f3f6ef;
+  box-shadow: 0 9px 24px rgb(38 56 47 / 6%);
+}
+
 .node-status {
   display: inline-flex;
   align-self: flex-start;
