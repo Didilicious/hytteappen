@@ -18,6 +18,14 @@ export async function readOpenNoticeboardPosts() {
     .orderBy(desc(noticeboardPosts.createdAt), desc(noticeboardPosts.id)) as NoticeboardPost[]
 }
 
+export async function readAllNoticeboardPosts() {
+  const db = getDb()
+  return await db
+    .select()
+    .from(noticeboardPosts)
+    .orderBy(desc(noticeboardPosts.createdAt), desc(noticeboardPosts.id)) as NoticeboardPost[]
+}
+
 export async function readNoticeboardPost(id: string) {
   const db = getDb()
   const [post] = await db

@@ -53,3 +53,12 @@ export function prepareOpenNoticeboardPosts(posts: NoticeboardPost[]) {
       return createdAtComparison || second.id.localeCompare(first.id)
     })
 }
+
+export function prepareSolvedNoticeboardPosts(posts: NoticeboardPost[]) {
+  return posts
+    .filter((post) => post.status === 'solved')
+    .toSorted((first, second) => {
+      const updatedAtComparison = second.updatedAt.localeCompare(first.updatedAt)
+      return updatedAtComparison || second.id.localeCompare(first.id)
+    })
+}

@@ -8,9 +8,14 @@ import HomePage from '../src/pages/HomePage'
 import { currentHomeIconNames, homeIconNames } from '../src/homeIcons'
 
 const loadHomeIconsMock = vi.hoisted(() => vi.fn())
+const loadNoticeboardUnseenCountMock = vi.hoisted(() => vi.fn())
 
 vi.mock('../src/guideImages', () => ({
   loadHomeIcons: loadHomeIconsMock,
+}));
+
+vi.mock('../src/noticeboard', () => ({
+  loadNoticeboardUnseenCount: loadNoticeboardUnseenCountMock,
 }));
 
 vi.mock('../src/auth', () => ({
@@ -45,10 +50,14 @@ describe('home page Drive icons', () => {
     root = undefined
     document.body.innerHTML = ''
     loadHomeIconsMock.mockReset()
+    loadNoticeboardUnseenCountMock.mockReset()
     vi.restoreAllMocks()
   })
 
   async function renderHome() {
+    if (!loadNoticeboardUnseenCountMock.getMockImplementation()) {
+      loadNoticeboardUnseenCountMock.mockResolvedValue(0)
+    }
     const container = document.createElement('div')
     document.body.append(container)
     root = createRoot(container)
@@ -91,7 +100,7 @@ describe('home page Drive icons', () => {
     const iconAreas = container.querySelectorAll('.task-button__icon')
 
     expect(iconAreas).toHaveLength(currentHomeIconNames.length)
-    iconAreas.forEach((iconArea) => expect(iconArea.childElementCount).toBe(0))
+    iconAreas.forEach((iconArea) => expect(iconArea.querySelector('img')).toBeNull())
   })
 
   it('keeps the reserved icon areas empty when Drive icons are missing', async () => {
@@ -101,7 +110,7 @@ describe('home page Drive icons', () => {
     const container = await renderHome()
 
     container.querySelectorAll('.task-button__icon').forEach((iconArea) => {
-      expect(iconArea.childElementCount).toBe(0)
+      expect(iconArea.querySelector('img')).toBeNull()
     })
     expect(warning).toHaveBeenCalledTimes(currentHomeIconNames.length)
     expect(warning.mock.calls.flat().join(' ')).toContain(homeIconNames.noticeboard)
@@ -119,7 +128,7 @@ describe('home page Drive icons', () => {
 
     act(() => openCabinIcon?.dispatchEvent(new Event('error')))
 
-    expect(findButton(container, 'Åpne hytte')?.querySelector('.task-button__icon')?.childElementCount).toBe(0)
+    expect(findButton(container, 'Åpne hytte')?.querySelector('.task-button__icon img')).toBeNull()
     expect(warning).toHaveBeenCalledWith(expect.stringContaining(homeIconNames.openCabin))
   })
 
@@ -146,5 +155,31 @@ describe('home page Drive icons', () => {
     expect(foodButton?.disabled).toBe(true)
     expect(findButton(container, 'Oppslagstavle')?.disabled).toBe(false)
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe('/')
+  })
+
+  it('shows the unseen count without changing the noticeboard Drive icon', async () => {
+    loadHomeIconsMock.mockResolvedValue({
+      [homeIconNames.noticeboard]: {
+        name: `${homeIconNames.noticeboard}.png`,
+        src: `https://drive.example/${homeIconNames.noticeboard}`,
+      },
+    })
+    loadNoticeboardUnseenCountMock.mockResolvedValue(12)
+
+    const container = await renderHome()
+    const noticeboardButton = findButton(container, 'Oppslagstavle')
+
+    expect(noticeboardButton?.querySelector('.task-button__badge')?.textContent).toBe('12')
+    expect(noticeboardButton?.querySelector('img')?.src).toContain(homeIconNames.noticeboard)
+  })
+
+  it('keeps the home page usable when unseen count loading fails', async () => {
+    loadHomeIconsMock.mockResolvedValue({})
+    loadNoticeboardUnseenCountMock.mockRejectedValue(new Error('network'))
+
+    const container = await renderHome()
+
+    expect(findButton(container, 'Oppslagstavle')).toBeDefined()
+    expect(container.querySelector('.task-button__badge')).toBeNull()
   })
 })
