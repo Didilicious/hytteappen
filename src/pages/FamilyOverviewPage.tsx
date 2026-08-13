@@ -14,7 +14,7 @@ export default function FamilyOverviewPage() {
       </button>
 
       <div className="family-overview-heading page-enter">
-        <p className="eyebrow">Familien på Fikkan</p>
+        <p className="eyebrow">Familien</p>
         <h1>Familieoversikt</h1>
         <p>Velg en familie for å se familiemedlemmene.</p>
       </div>
