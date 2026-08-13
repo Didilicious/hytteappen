@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.10",
+    "@netlify/database": "^1.1.0",
     "@vitejs/plugin-react": "latest",
+    "drizzle-orm": "^1.0.0-beta.22",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "^7.18.1",
@@ -23,6 +25,7 @@
     "@types/node": "^26.1.1",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "drizzle-kit": "^1.0.0-beta.22",
     "happy-dom": "^20.11.1",
     "vitest": "^4.1.10"
   }

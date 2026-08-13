@@ -10,6 +10,8 @@ import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import NewBookingPage from './pages/NewBookingPage'
+import NewNoticeboardPostPage from './pages/NewNoticeboardPostPage'
+import NoticeboardPage from './pages/NoticeboardPage'
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation()
@@ -48,6 +50,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <GuidePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/noticeboard"
+        element={
+          <ProtectedRoute>
+            <NoticeboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/noticeboard/new"
+        element={
+          <ProtectedRoute>
+            <NewNoticeboardPostPage />
           </ProtectedRoute>
         }
       />

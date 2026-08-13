@@ -122,6 +122,17 @@ export default function HomePage() {
           <span className="task-button__arrow" aria-hidden="true">→</span>
         </button>
 
+        <button className="task-button" type="button" onClick={() => navigate('/noticeboard')}>
+          <span className="task-button__icon" aria-hidden="true">
+            <HomeIcon
+              driveIcon={iconsByName[homeIconNames.noticeboard]}
+              name={homeIconNames.noticeboard}
+            />
+          </span>
+          <span className="task-button__label">Oppslagstavle</span>
+          <span className="task-button__arrow" aria-hidden="true">→</span>
+        </button>
+
         <button className="task-button task-button--disabled" type="button" disabled>
           <span className="task-button__icon" aria-hidden="true">
             <HomeIcon

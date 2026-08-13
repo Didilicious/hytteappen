@@ -80,8 +80,8 @@ describe('home page Drive icons', () => {
     expect(findButton(container, 'Stenge hytte')?.querySelector('img')?.src).toContain(homeIconNames.closeCabin)
     expect(findButton(container, 'Drift av hytte')?.querySelector('img')?.src).toContain(homeIconNames.operations)
     expect(findButton(container, 'Booke hyttetid')?.querySelector('img')?.src).toContain(homeIconNames.booking)
+    expect(findButton(container, 'Oppslagstavle')?.querySelector('img')?.src).toContain(homeIconNames.noticeboard)
     expect(findButton(container, 'Planlegge mat')?.querySelector('img')?.src).toContain(homeIconNames.food)
-    expect(container.textContent).not.toContain('Oppslagstavle')
   })
 
   it('keeps the reserved icon areas empty while Drive icons are loading', async () => {
@@ -104,7 +104,7 @@ describe('home page Drive icons', () => {
       expect(iconArea.childElementCount).toBe(0)
     })
     expect(warning).toHaveBeenCalledTimes(currentHomeIconNames.length)
-    expect(warning.mock.calls.flat().join(' ')).not.toContain(homeIconNames.noticeboard)
+    expect(warning.mock.calls.flat().join(' ')).toContain(homeIconNames.noticeboard)
   })
 
   it('keeps an icon area empty when its Drive image fails to load', async () => {
@@ -128,6 +128,7 @@ describe('home page Drive icons', () => {
     ['Stenge hytte', '/guide/close-cabin/not-ready'],
     ['Drift av hytte', '/guide/cabin-operations/not-ready'],
     ['Booke hyttetid', '/booking'],
+    ['Oppslagstavle', '/noticeboard'],
   ])('keeps %s navigation unchanged', async (label, expectedPath) => {
     loadHomeIconsMock.mockResolvedValue({})
     const container = await renderHome()
@@ -137,13 +138,13 @@ describe('home page Drive icons', () => {
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(expectedPath)
   })
 
-  it('keeps Planlegge mat disabled without adding the planned noticeboard item', async () => {
+  it('keeps Planlegge mat disabled while Oppslagstavle is active', async () => {
     loadHomeIconsMock.mockResolvedValue({})
     const container = await renderHome()
     const foodButton = findButton(container, 'Planlegge mat')
 
     expect(foodButton?.disabled).toBe(true)
-    expect(container.textContent).not.toContain('Oppslagstavle')
+    expect(findButton(container, 'Oppslagstavle')?.disabled).toBe(false)
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe('/')
   })
 })

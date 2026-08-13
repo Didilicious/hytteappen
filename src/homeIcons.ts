@@ -13,4 +13,5 @@ export const currentHomeIconNames = [
   homeIconNames.booking,
   homeIconNames.food,
   homeIconNames.operations,
+  homeIconNames.noticeboard,
 ] as const
