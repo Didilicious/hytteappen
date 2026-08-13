@@ -2,42 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { GuideImage } from '../../shared/guideImages'
 import AppFrame from '../components/AppFrame'
+import DriveIcon, { warnAboutMissingDriveIcons } from '../components/DriveIcon'
 import { loadHomeIcons } from '../guideImages'
 import { currentHomeIconNames, homeIconNames } from '../homeIcons'
 import { loadNoticeboardUnseenCount } from '../noticeboard'
-
-type HomeIconProps = {
-  driveIcon?: GuideImage | null
-  name: string
-}
-
-function warnAboutHomeIcon(message: string) {
-  if (import.meta.env.DEV) console.warn(message)
-}
-
-function HomeIcon({ driveIcon, name }: HomeIconProps) {
-  const [loadFailed, setLoadFailed] = useState(false)
-
-  useEffect(() => {
-    setLoadFailed(false)
-    if (driveIcon === null) {
-      warnAboutHomeIcon(`Fant ikke hjem-ikonet ${name} i Google Drive.`)
-    }
-  }, [driveIcon, name])
-
-  if (!driveIcon || loadFailed) return null
-
-  return (
-    <img
-      src={driveIcon.src}
-      alt=""
-      onError={() => {
-        setLoadFailed(true)
-        warnAboutHomeIcon(`Kunne ikke laste hjem-ikonet ${name} fra Google Drive.`)
-      }}
-    />
-  )
-}
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -52,7 +20,7 @@ export default function HomePage() {
         if (isActive) setIconsByName(icons)
       })
       .catch(() => {
-        warnAboutHomeIcon('Kunne ikke laste hjem-ikoner fra Google Drive. Ikonområdene forblir tomme.')
+        warnAboutMissingDriveIcons('hjem-ikoner')
       })
 
     return () => {
@@ -88,9 +56,10 @@ export default function HomePage() {
           onClick={() => navigate('/guide/open-cabin/get-key')}
         >
           <span className="task-button__icon" aria-hidden="true">
-            <HomeIcon
+            <DriveIcon
               driveIcon={iconsByName[homeIconNames.openCabin]}
               name={homeIconNames.openCabin}
+              warningLabel="hjem-ikonet"
             />
           </span>
           <span className="task-button__label">Åpne hytte</span>
@@ -103,9 +72,10 @@ export default function HomePage() {
           onClick={() => navigate('/guide/close-cabin/not-ready')}
         >
           <span className="task-button__icon" aria-hidden="true">
-            <HomeIcon
+            <DriveIcon
               driveIcon={iconsByName[homeIconNames.closeCabin]}
               name={homeIconNames.closeCabin}
+              warningLabel="hjem-ikonet"
             />
           </span>
           <span className="task-button__label">Stenge hytte</span>
@@ -118,9 +88,10 @@ export default function HomePage() {
           onClick={() => navigate('/guide/cabin-operations/not-ready')}
         >
           <span className="task-button__icon" aria-hidden="true">
-            <HomeIcon
+            <DriveIcon
               driveIcon={iconsByName[homeIconNames.operations]}
               name={homeIconNames.operations}
+              warningLabel="hjem-ikonet"
             />
           </span>
           <span className="task-button__label">Drift av hytte</span>
@@ -129,9 +100,10 @@ export default function HomePage() {
 
         <button className="task-button" type="button" onClick={() => navigate('/booking')}>
           <span className="task-button__icon" aria-hidden="true">
-            <HomeIcon
+            <DriveIcon
               driveIcon={iconsByName[homeIconNames.booking]}
               name={homeIconNames.booking}
+              warningLabel="hjem-ikonet"
             />
           </span>
           <span className="task-button__label">Booke hyttetid</span>
@@ -140,9 +112,10 @@ export default function HomePage() {
 
         <button className="task-button" type="button" onClick={() => navigate('/noticeboard')}>
           <span className="task-button__icon task-button__icon--badged" aria-hidden="true">
-            <HomeIcon
+            <DriveIcon
               driveIcon={iconsByName[homeIconNames.noticeboard]}
               name={homeIconNames.noticeboard}
+              warningLabel="hjem-ikonet"
             />
             <span className="task-button__badge-slot">
               {noticeboardUnseenCount > 0 && (
@@ -156,9 +129,10 @@ export default function HomePage() {
 
         <button className="task-button task-button--disabled" type="button" disabled>
           <span className="task-button__icon" aria-hidden="true">
-            <HomeIcon
+            <DriveIcon
               driveIcon={iconsByName[homeIconNames.food]}
               name={homeIconNames.food}
+              warningLabel="hjem-ikonet"
             />
           </span>
           <span className="task-button__label">Planlegge mat</span>
