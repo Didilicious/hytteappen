@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import AppFrame from '../components/AppFrame'
-import ProfilePlaceholder from '../components/ProfilePlaceholder'
+import ProfileImage from '../components/ProfileImage'
 import { families } from '../families'
 
 export default function FamilyOverviewPage() {
@@ -26,7 +26,11 @@ export default function FamilyOverviewPage() {
             key={family.accountId}
             to={`/familieoversikt/${family.accountId}`}
           >
-            <ProfilePlaceholder variant="family" />
+            <ProfileImage
+              familyId={family.accountId}
+              variant="family"
+              alt={`Familiebilde for ${family.displayName}`}
+            />
             <span className="family-card__content">
               <span className="family-card__name">{family.displayName}</span>
               <span className="family-card__members">

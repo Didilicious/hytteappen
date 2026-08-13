@@ -542,6 +542,38 @@ h1 {
   border-radius: 50%;
 }
 
+.profile-image {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.profile-image--family,
+.profile-image--family .profile-placeholder,
+.profile-image--family img {
+  width: 62px;
+  height: 62px;
+  border-radius: 14px;
+}
+
+.profile-image--member,
+.profile-image--member .profile-placeholder,
+.profile-image--member img {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+}
+
+.profile-image img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border: 1px solid #cbc6b9;
+  object-fit: cover;
+  object-position: center;
+  background: #e8e5dc;
+}
+
 .profile-placeholder__head,
 .profile-placeholder__body {
   position: absolute;
@@ -597,7 +629,9 @@ h1 {
   gap: 18px;
 }
 
-.family-profile-heading .profile-placeholder--family {
+.family-profile-heading .profile-image--family,
+.family-profile-heading .profile-image--family .profile-placeholder,
+.family-profile-heading .profile-image--family img {
   width: 82px;
   height: 82px;
   border-radius: 19px;
@@ -618,6 +652,72 @@ h1 {
 .family-profile-heading h1,
 .family-not-found h1 {
   font-size: clamp(2.25rem, 10vw, 4.2rem);
+}
+
+.family-profile-heading__content {
+  min-width: 0;
+}
+
+.profile-image-upload {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.profile-image-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.profile-image-upload__action {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0;
+  color: var(--clay-dark);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.profile-image-upload__action:hover,
+.profile-image-upload__action:focus-visible {
+  color: var(--forest);
+}
+
+.profile-image-upload__input:focus-visible + .profile-image-upload__action {
+  outline: 3px solid rgb(153 105 77 / 35%);
+  outline-offset: 3px;
+}
+
+.profile-image-upload__action[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.profile-image-upload__success,
+.profile-image-upload__error {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.profile-image-upload__success {
+  color: var(--forest-deep);
+}
+
+.profile-image-upload__error {
+  color: #8c392c;
 }
 
 .family-member-section {
@@ -689,6 +789,17 @@ h1 {
 .family-member-card__header > div:last-child {
   min-width: 0;
   flex: 1;
+}
+
+.family-member-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: 16px;
+}
+
+.family-member-card__actions .profile-image-upload {
+  margin-top: 0;
 }
 
 .family-member-card h3 {

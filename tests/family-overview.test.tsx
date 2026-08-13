@@ -98,6 +98,15 @@ describe('Familieoversikt', () => {
     })
   })
 
+  it('shows family pictures on overview cards with placeholders underneath', async () => {
+    const container = await renderApp('/familieoversikt')
+    const heidiCard = container.querySelector<HTMLAnchorElement>('a[href="/familieoversikt/heidi"]')
+    const image = heidiCard?.querySelector<HTMLImageElement>('img[alt="Familiebilde for Heidi"]')
+
+    expect(image?.src).toContain('/.netlify/functions/profile-image?familyId=heidi')
+    expect(heidiCard?.querySelector('.profile-placeholder--family')).not.toBeNull()
+  })
+
   it('opens a family profile from the overview', async () => {
     const container = await renderApp('/familieoversikt')
     const madsLink = container.querySelector<HTMLAnchorElement>('a[href="/familieoversikt/mads"]')
