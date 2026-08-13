@@ -3,7 +3,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter, useLocation } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { familyMembers as loginAccounts } from '../shared/familyMembers'
 import App from '../src/App'
 import { families } from '../src/families'
@@ -44,12 +44,20 @@ async function flushNavigation() {
 describe('Familieoversikt', () => {
   let root: ReturnType<typeof createRoot> | undefined
 
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ profiles: [] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )))
+  })
+
   afterEach(() => {
     if (root) act(() => root?.unmount())
     root = undefined
     document.body.innerHTML = ''
     authState.status = 'authenticated'
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   async function renderApp(path: string) {
