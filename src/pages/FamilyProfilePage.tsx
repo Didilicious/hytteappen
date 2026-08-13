@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import MemberContactEditor from '../components/MemberContactEditor'
-import ProfilePlaceholder from '../components/ProfilePlaceholder'
+import ProfileImage from '../components/ProfileImage'
+import ProfileImageUpload from '../components/ProfileImageUpload'
 import { getFamily, type FamilyMember } from '../families'
 import {
   readFamilyProfiles,
@@ -77,6 +78,8 @@ export default function FamilyProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savedMemberId, setSavedMemberId] = useState<string | null>(null)
+  const [familyImageVersion, setFamilyImageVersion] = useState<string>()
+  const [memberImageVersions, setMemberImageVersions] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!family) return
@@ -87,6 +90,8 @@ export default function FamilyProfilePage() {
     setLoadError(null)
     setEditingMemberId(null)
     setSavedMemberId(null)
+    setFamilyImageVersion(undefined)
+    setMemberImageVersions({})
 
     void readFamilyProfiles(family.accountId, controller.signal)
       .then((loadedProfiles) => setProfiles(loadedProfiles))
@@ -159,10 +164,22 @@ export default function FamilyProfilePage() {
       </Link>
 
       <header className="family-profile-heading page-enter">
-        <ProfilePlaceholder variant="family" />
-        <div>
+        <ProfileImage
+          familyId={family.accountId}
+          variant="family"
+          alt={`Familiebilde for ${family.displayName}`}
+          version={familyImageVersion}
+        />
+        <div className="family-profile-heading__content">
           <p className="eyebrow">Familieprofil</p>
           <h1>{family.displayName}</h1>
+          {canEdit && (
+            <ProfileImageUpload
+              familyId={family.accountId}
+              label="Endre familiebilde"
+              onUploaded={setFamilyImageVersion}
+            />
+          )}
         </div>
       </header>
 
@@ -187,18 +204,37 @@ export default function FamilyProfilePage() {
             return (
               <article className={`family-member-card${isEditing ? ' family-member-card--editing' : ''}`} key={member.id}>
                 <div className="family-member-card__header">
-                  <ProfilePlaceholder variant="member" />
+                  <ProfileImage
+                    familyId={family.accountId}
+                    memberId={member.id}
+                    variant="member"
+                    alt={`Profilbilde av ${member.displayName}`}
+                    version={memberImageVersions[member.id]}
+                  />
                   <div>
                     <h3>{member.displayName}</h3>
-                    {canEdit && !isEditing && (
-                      <button
-                        className="family-member-card__edit"
-                        type="button"
-                        onClick={() => startEditing(member)}
-                        disabled={loading || Boolean(loadError)}
-                      >
-                        Rediger
-                      </button>
+                    {canEdit && (
+                      <div className="family-member-card__actions">
+                        <ProfileImageUpload
+                          familyId={family.accountId}
+                          memberId={member.id}
+                          label="Endre bilde"
+                          onUploaded={(version) => setMemberImageVersions((current) => ({
+                            ...current,
+                            [member.id]: version,
+                          }))}
+                        />
+                        {!isEditing && (
+                          <button
+                            className="family-member-card__edit"
+                            type="button"
+                            onClick={() => startEditing(member)}
+                            disabled={loading || Boolean(loadError)}
+                          >
+                            Rediger kontaktinfo
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

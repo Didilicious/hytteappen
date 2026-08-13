@@ -17,6 +17,7 @@
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "^7.18.1",
+    "sharp": "^0.34.3",
     "typescript": "latest",
     "vite": "latest"
   },
