@@ -76,12 +76,18 @@ describe('Google Drive guide images', () => {
       { id: 'cabin', name: 'icon_cabin.png', mimeType: 'image/png' },
       { id: 'open', name: 'icon_cabin_open.JPG', mimeType: 'image/jpeg' },
       { id: 'calendar', name: 'icon_calendar.jpeg', mimeType: 'image/jpeg' },
+      { id: 'calendar-booking', name: 'icon_calendar_booking.PNG', mimeType: 'image/png' },
+      { id: 'calendar-new', name: 'icon_calendar_new.jpg', mimeType: 'image/jpeg' },
+      { id: 'calendar-edit', name: 'icon_calendar_edit.webp', mimeType: 'image/webp' },
       { id: 'food', name: 'icon_food.webp', mimeType: 'image/webp' },
     ]
 
     expect(matchDriveIcons(iconFiles, [
       'icon_cabin_open',
       'icon_calendar',
+      'icon_calendar_booking',
+      'icon_calendar_new',
+      'icon_calendar_edit',
       'icon_food',
     ])).toEqual({
       icon_cabin_open: {
@@ -91,6 +97,18 @@ describe('Google Drive guide images', () => {
       icon_calendar: {
         name: 'icon_calendar.jpeg',
         src: 'https://drive.google.com/thumbnail?id=calendar&sz=w1600',
+      },
+      icon_calendar_booking: {
+        name: 'icon_calendar_booking.PNG',
+        src: 'https://drive.google.com/thumbnail?id=calendar-booking&sz=w1600',
+      },
+      icon_calendar_new: {
+        name: 'icon_calendar_new.jpg',
+        src: 'https://drive.google.com/thumbnail?id=calendar-new&sz=w1600',
+      },
+      icon_calendar_edit: {
+        name: 'icon_calendar_edit.webp',
+        src: 'https://drive.google.com/thumbnail?id=calendar-edit&sz=w1600',
       },
       icon_food: {
         name: 'icon_food.webp',

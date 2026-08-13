@@ -1,51 +1,45 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import type { GuideImage } from '../../shared/guideImages'
+import { bookingIconNames, currentBookingIconNames } from '../bookingIcons'
 import AppFrame from '../components/AppFrame'
+import DriveIcon, { warnAboutMissingDriveIcons } from '../components/DriveIcon'
+import { loadHomeIcons } from '../guideImages'
 
 type BookingAction = {
-  icon: 'calendar' | 'add' | 'edit'
+  iconName: typeof currentBookingIconNames[number]
   label: string
   path: string
 }
 
 const bookingActions: BookingAction[] = [
-  { icon: 'calendar', label: 'Se hyttekalender', path: '/booking/calendar' },
-  { icon: 'add', label: 'Registrer ny tid', path: '/booking/new' },
-  { icon: 'edit', label: 'Rediger dine tider', path: '/booking/edit' },
+  { iconName: bookingIconNames.calendar, label: 'Se hyttekalender', path: '/booking/calendar' },
+  { iconName: bookingIconNames.newBooking, label: 'Registrer ny tid', path: '/booking/new' },
+  { iconName: bookingIconNames.editBookings, label: 'Rediger dine tider', path: '/booking/edit' },
 ]
-
-function BookingIcon({ icon }: { icon: BookingAction['icon'] }) {
-  if (icon === 'add') {
-    return (
-      <svg viewBox="0 0 48 48" focusable="false">
-        <path d="M10 16.5h28M16 8v7M32 8v7M11 11.5h26a2 2 0 0 1 2 2v25H9v-25a2 2 0 0 1 2-2Z" />
-        <path d="M24 21v12M18 27h12" />
-      </svg>
-    )
-  }
-
-  if (icon === 'edit') {
-    return (
-      <svg viewBox="0 0 48 48" focusable="false">
-        <path d="M10 16.5h28M16 8v7M32 8v7M11 11.5h26a2 2 0 0 1 2 2v25H9v-25a2 2 0 0 1 2-2Z" />
-        <path d="m19 32 2.2-6.5L31 15.7l4.3 4.3-9.8 9.8L19 32Z" />
-      </svg>
-    )
-  }
-
-  return (
-    <svg viewBox="0 0 48 48" focusable="false">
-      <path d="M10 16.5h28M16 8v7M32 8v7M11 11.5h26a2 2 0 0 1 2 2v25H9v-25a2 2 0 0 1 2-2Z" />
-      <path d="M16 23h5M27 23h5M16 30h5M27 30h5" />
-    </svg>
-  )
-}
 
 export default function BookingLandingPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const bookingCreated = (location.state as { bookingCreated?: boolean } | null)?.bookingCreated === true
   const [showSuccess, setShowSuccess] = useState(bookingCreated)
+  const [iconsByName, setIconsByName] = useState<Record<string, GuideImage | null>>({})
+
+  useEffect(() => {
+    let isActive = true
+
+    loadHomeIcons(currentBookingIconNames)
+      .then((icons) => {
+        if (isActive) setIconsByName(icons)
+      })
+      .catch(() => {
+        warnAboutMissingDriveIcons('kalender-ikoner')
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!showSuccess) return
@@ -83,7 +77,11 @@ export default function BookingLandingPage() {
             onClick={() => navigate(action.path)}
           >
             <span className="task-button__icon" aria-hidden="true">
-              <BookingIcon icon={action.icon} />
+              <DriveIcon
+                driveIcon={iconsByName[action.iconName]}
+                name={action.iconName}
+                warningLabel="kalender-ikonet"
+              />
             </span>
             <span className="task-button__label">{action.label}</span>
             <span className="task-button__arrow" aria-hidden="true">→</span>

@@ -76,21 +76,26 @@ export function loadGuideImages(contentById: Record<GuideContentId, GuideContent
   return guideImagesPromise
 }
 
-let homeIconsPromise: Promise<Record<string, GuideImage | null>> | undefined
+const homeIconsPromises = new Map<string, Promise<Record<string, GuideImage | null>>>()
 
 export function loadHomeIcons(iconNames: readonly string[]) {
-  if (!homeIconsPromise) {
-    const searchParams = new URLSearchParams()
-    iconNames.forEach((iconName) => searchParams.append('icon', iconName))
+  const uniqueIconNames = [...new Set(iconNames)]
+  const cacheKey = [...uniqueIconNames].sort().join('\n')
+  let iconsPromise = homeIconsPromises.get(cacheKey)
 
-    homeIconsPromise = requestDriveImages(searchParams).then(async (response) => {
+  if (!iconsPromise) {
+    const searchParams = new URLSearchParams()
+    uniqueIconNames.forEach((iconName) => searchParams.append('icon', iconName))
+
+    iconsPromise = requestDriveImages(searchParams).then(async (response) => {
       if (!response.ok) throw new Error('Home icons request failed')
 
-      const iconsByName = readIconsResponse(await response.json(), iconNames)
+      const iconsByName = readIconsResponse(await response.json(), uniqueIconNames)
       if (!iconsByName) throw new Error('Invalid home icons response')
       return iconsByName
     })
+    homeIconsPromises.set(cacheKey, iconsPromise)
   }
 
-  return homeIconsPromise
+  return iconsPromise
 }
