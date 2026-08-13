@@ -34,6 +34,25 @@ function readImagesResponse(value: unknown, groups: readonly string[]) {
   return response.imagesByGroup as Record<string, GuideImage[]>
 }
 
+function readIconsResponse(value: unknown, iconNames: readonly string[]) {
+  const response = value as Partial<GuideImagesResponse> | null
+  if (!response?.iconsByName || typeof response.iconsByName !== 'object') return null
+
+  for (const iconName of iconNames) {
+    const icon = response.iconsByName[iconName]
+    if (icon !== null && !isGuideImage(icon)) return null
+  }
+
+  return response.iconsByName as Record<string, GuideImage | null>
+}
+
+function requestDriveImages(searchParams: URLSearchParams) {
+  return fetch(`/.netlify/functions/guide-images?${searchParams}`, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  })
+}
+
 export function loadGuideImages(contentById: Record<GuideContentId, GuideContent>) {
   if (!guideImagesPromise) {
     const groups = collectImageGroups(contentById)
@@ -44,10 +63,7 @@ export function loadGuideImages(contentById: Record<GuideContentId, GuideContent
       const searchParams = new URLSearchParams()
       groups.forEach((group) => searchParams.append('group', group))
 
-      guideImagesPromise = fetch(`/.netlify/functions/guide-images?${searchParams}`, {
-        credentials: 'include',
-        headers: { Accept: 'application/json' },
-      }).then(async (response) => {
+      guideImagesPromise = requestDriveImages(searchParams).then(async (response) => {
         if (!response.ok) throw new Error('Guide images request failed')
 
         const imagesByGroup = readImagesResponse(await response.json(), groups)
@@ -58,4 +74,23 @@ export function loadGuideImages(contentById: Record<GuideContentId, GuideContent
   }
 
   return guideImagesPromise
+}
+
+let homeIconsPromise: Promise<Record<string, GuideImage | null>> | undefined
+
+export function loadHomeIcons(iconNames: readonly string[]) {
+  if (!homeIconsPromise) {
+    const searchParams = new URLSearchParams()
+    iconNames.forEach((iconName) => searchParams.append('icon', iconName))
+
+    homeIconsPromise = requestDriveImages(searchParams).then(async (response) => {
+      if (!response.ok) throw new Error('Home icons request failed')
+
+      const iconsByName = readIconsResponse(await response.json(), iconNames)
+      if (!iconsByName) throw new Error('Invalid home icons response')
+      return iconsByName
+    })
+  }
+
+  return homeIconsPromise
 }
