@@ -54,6 +54,26 @@ export function matchDriveImages(files: readonly DriveImageFile[], groups: reado
   }))
 }
 
+function getSupportedImageBaseName(filename: string) {
+  return filename.match(/^(.*)\.(?:png|jpe?g|webp)$/i)?.[1]
+}
+
+export function matchDriveIcons(files: readonly DriveImageFile[], iconNames: readonly string[]) {
+  const sortedFiles = sortDriveImages(files)
+
+  return Object.fromEntries(iconNames.map((iconName) => {
+    const normalizedIconName = iconName.toLocaleLowerCase('nb')
+    const match = sortedFiles.find((file) => (
+      getSupportedImageBaseName(file.name)?.toLocaleLowerCase('nb') === normalizedIconName
+    ))
+
+    return [iconName, match ? {
+      name: match.name,
+      src: `https://drive.google.com/thumbnail?id=${encodeURIComponent(match.id)}&sz=w1600`,
+    } : null]
+  }))
+}
+
 export async function fetchDriveImages(fetcher: typeof fetch = fetch) {
   const response = await fetcher(`https://drive.google.com/embeddedfolderview?id=${driveFolderId}#list`, {
     headers: { Accept: 'text/html' },

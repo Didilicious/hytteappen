@@ -5,4 +5,5 @@ export type GuideImage = {
 
 export type GuideImagesResponse = {
   imagesByGroup: Record<string, GuideImage[]>
+  iconsByName: Record<string, GuideImage | null>
 }

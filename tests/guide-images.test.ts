@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   fetchDriveImages,
+  matchDriveIcons,
   matchDriveImages,
   parseDriveFolderHtml,
   sortDriveImages,
@@ -68,6 +69,43 @@ describe('Google Drive guide images', () => {
       name: 'test-1.jpeg',
       src: 'https://drive.google.com/thumbnail?id=one&sz=w1600',
     })
+  })
+
+  it('matches requested icon names by exact base filename across supported extensions', () => {
+    const iconFiles: DriveImageFile[] = [
+      { id: 'cabin', name: 'icon_cabin.png', mimeType: 'image/png' },
+      { id: 'open', name: 'icon_cabin_open.JPG', mimeType: 'image/jpeg' },
+      { id: 'calendar', name: 'icon_calendar.jpeg', mimeType: 'image/jpeg' },
+      { id: 'food', name: 'icon_food.webp', mimeType: 'image/webp' },
+    ]
+
+    expect(matchDriveIcons(iconFiles, [
+      'icon_cabin_open',
+      'icon_calendar',
+      'icon_food',
+    ])).toEqual({
+      icon_cabin_open: {
+        name: 'icon_cabin_open.JPG',
+        src: 'https://drive.google.com/thumbnail?id=open&sz=w1600',
+      },
+      icon_calendar: {
+        name: 'icon_calendar.jpeg',
+        src: 'https://drive.google.com/thumbnail?id=calendar&sz=w1600',
+      },
+      icon_food: {
+        name: 'icon_food.webp',
+        src: 'https://drive.google.com/thumbnail?id=food&sz=w1600',
+      },
+    })
+  })
+
+  it('does not let icon_cabin match icon_cabin_open or unsupported extensions', () => {
+    const iconFiles: DriveImageFile[] = [
+      { id: 'open', name: 'icon_cabin_open.png', mimeType: 'image/png' },
+      { id: 'gif', name: 'icon_cabin.gif', mimeType: 'image/gif' },
+    ]
+
+    expect(matchDriveIcons(iconFiles, ['icon_cabin'])).toEqual({ icon_cabin: null })
   })
 
   it('rejects when the Drive folder request fails', async () => {

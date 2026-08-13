@@ -1407,16 +1407,6 @@ h1 {
   color: currentColor;
 }
 
-.task-button__icon svg {
-  width: 42px;
-  height: 42px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-}
-
 .task-button__icon img {
   display: block;
   width: 42px;

@@ -1,16 +1,16 @@
 import type { Config } from '@netlify/functions'
 import type { GuideImagesResponse } from '../../shared/guideImages.ts'
-import { fetchDriveImages, matchDriveImages } from './_shared/guide-images.mts'
+import { fetchDriveImages, matchDriveIcons, matchDriveImages } from './_shared/guide-images.mts'
 import { clearSessionCookie, getAuthenticatedFamilyMember, jsonResponse } from './_shared/session.mts'
 
-function readGroups(request: Request) {
-  const groups = new URL(request.url).searchParams
-    .getAll('group')
-    .map((group) => group.trim())
+function readNames(request: Request, parameter: 'group' | 'icon') {
+  const names = new URL(request.url).searchParams
+    .getAll(parameter)
+    .map((name) => name.trim())
     .filter(Boolean)
 
-  if (groups.length > 100 || groups.some((group) => group.length > 100)) return null
-  return [...new Set(groups)]
+  if (names.length > 100 || names.some((name) => name.length > 100)) return null
+  return [...new Set(names)]
 }
 
 export default async function guideImages(request: Request) {
@@ -29,19 +29,22 @@ export default async function guideImages(request: Request) {
     return jsonResponse({ message: 'Kunne ikke kontrollere økten.' }, { status: 500 })
   }
 
-  const groups = readGroups(request)
-  if (!groups) {
-    return jsonResponse({ message: 'Ugyldige bildegrupper.' }, { status: 400 })
+  const groups = readNames(request, 'group')
+  const iconNames = readNames(request, 'icon')
+  if (!groups || !iconNames) {
+    return jsonResponse({ message: 'Ugyldige bildefiltre.' }, { status: 400 })
   }
 
-  if (groups.length === 0) {
-    const body: GuideImagesResponse = { imagesByGroup: {} }
+  if (groups.length === 0 && iconNames.length === 0) {
+    const body: GuideImagesResponse = { imagesByGroup: {}, iconsByName: {} }
     return jsonResponse(body)
   }
 
   try {
+    const files = await fetchDriveImages()
     const body: GuideImagesResponse = {
-      imagesByGroup: matchDriveImages(await fetchDriveImages(), groups),
+      imagesByGroup: matchDriveImages(files, groups),
+      iconsByName: matchDriveIcons(files, iconNames),
     }
     return jsonResponse(body)
   } catch {
