@@ -127,6 +127,18 @@ export default function HomePage() {
           <span className="task-button__arrow" aria-hidden="true">→</span>
         </button>
 
+        <button className="task-button" type="button" onClick={() => navigate('/familieoversikt')}>
+          <span className="task-button__icon" aria-hidden="true">
+            <DriveIcon
+              driveIcon={iconsByName[homeIconNames.family]}
+              name={homeIconNames.family}
+              warningLabel="hjem-ikonet"
+            />
+          </span>
+          <span className="task-button__label">Familieoversikt</span>
+          <span className="task-button__arrow" aria-hidden="true">→</span>
+        </button>
+
         <button className="task-button task-button--disabled" type="button" disabled>
           <span className="task-button__icon" aria-hidden="true">
             <DriveIcon

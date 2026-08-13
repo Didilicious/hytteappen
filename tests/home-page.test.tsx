@@ -90,6 +90,7 @@ describe('home page Drive icons', () => {
     expect(findButton(container, 'Drift av hytte')?.querySelector('img')?.src).toContain(homeIconNames.operations)
     expect(findButton(container, 'Booke hyttetid')?.querySelector('img')?.src).toContain(homeIconNames.booking)
     expect(findButton(container, 'Oppslagstavle')?.querySelector('img')?.src).toContain(homeIconNames.noticeboard)
+    expect(findButton(container, 'Familieoversikt')?.querySelector('img')?.src).toContain(homeIconNames.family)
     expect(findButton(container, 'Planlegge mat')?.querySelector('img')?.src).toContain(homeIconNames.food)
   })
 
@@ -114,6 +115,7 @@ describe('home page Drive icons', () => {
     })
     expect(warning).toHaveBeenCalledTimes(currentHomeIconNames.length)
     expect(warning.mock.calls.flat().join(' ')).toContain(homeIconNames.noticeboard)
+    expect(warning.mock.calls.flat().join(' ')).toContain(homeIconNames.family)
   })
 
   it('keeps an icon area empty when its Drive image fails to load', async () => {
@@ -138,6 +140,7 @@ describe('home page Drive icons', () => {
     ['Drift av hytte', '/guide/cabin-operations/not-ready'],
     ['Booke hyttetid', '/booking'],
     ['Oppslagstavle', '/noticeboard'],
+    ['Familieoversikt', '/familieoversikt'],
   ])('keeps %s navigation unchanged', async (label, expectedPath) => {
     loadHomeIconsMock.mockResolvedValue({})
     const container = await renderHome()
