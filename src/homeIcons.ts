@@ -5,6 +5,7 @@ export const homeIconNames = {
   food: 'icon_food',
   operations: 'icon_cabin',
   noticeboard: 'icon_noticeboard',
+  family: 'icon_family',
 } as const
 
 export const currentHomeIconNames = [
@@ -14,4 +15,5 @@ export const currentHomeIconNames = [
   homeIconNames.food,
   homeIconNames.operations,
   homeIconNames.noticeboard,
+  homeIconNames.family,
 ] as const

@@ -6,6 +6,8 @@ import BookingDetailsPage from './pages/BookingDetailsPage'
 import BookingLandingPage from './pages/BookingLandingPage'
 import EditBookingPage from './pages/EditBookingPage'
 import EditBookingsPage from './pages/EditBookingsPage'
+import FamilyOverviewPage from './pages/FamilyOverviewPage'
+import FamilyProfilePage from './pages/FamilyProfilePage'
 import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -44,6 +46,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/familieoversikt"
+        element={
+          <ProtectedRoute>
+            <FamilyOverviewPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/familieoversikt/:familyId"
+        element={
+          <ProtectedRoute>
+            <FamilyProfilePage />
           </ProtectedRoute>
         }
       />
