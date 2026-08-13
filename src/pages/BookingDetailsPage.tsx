@@ -160,7 +160,7 @@ export default function BookingDetailsPage() {
 
           {isBookingOwner(booking, currentUser?.id) && (
             <div className="booking-details-actions">
-              <button className="secondary-button" type="button" onClick={() => navigate('/booking/edit')}>
+              <button className="secondary-button" type="button" onClick={() => navigate(`/booking/edit/${booking.id}`)}>
                 Rediger registrering
               </button>
             </div>

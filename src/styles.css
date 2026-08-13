@@ -1054,6 +1054,138 @@ h1 {
   margin-top: -16px;
 }
 
+.booking-edit-heading {
+  max-width: 600px;
+}
+
+.booking-edit-success,
+.booking-edit-status,
+.booking-edit-empty,
+.booking-edit-list {
+  width: 100%;
+  max-width: 720px;
+  margin-top: 30px;
+}
+
+.booking-edit-status,
+.booking-edit-empty {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.booking-edit-empty {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fffdf8;
+}
+
+.booking-edit-list {
+  display: grid;
+  gap: 14px;
+}
+
+.booking-edit-card {
+  display: grid;
+  gap: 22px;
+  padding: clamp(20px, 5vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fffdf8;
+  box-shadow: 0 14px 34px rgb(35 43 36 / 8%);
+}
+
+.booking-edit-card__content h2 {
+  margin: 0;
+  color: var(--forest);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.08rem, 4vw, 1.35rem);
+  font-weight: 500;
+}
+
+.booking-edit-card__content p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.booking-edit-card__actions,
+.booking-delete-dialog__actions {
+  display: grid;
+  gap: 10px;
+}
+
+.booking-edit-card__actions .secondary-button,
+.booking-edit-card__actions .danger-button,
+.booking-delete-dialog__actions .secondary-button,
+.booking-delete-dialog__actions .danger-button {
+  min-height: 50px;
+}
+
+.danger-button {
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 20px;
+  border: 1.5px solid var(--clay-dark);
+  border-radius: 13px;
+  color: #fffaf5;
+  background: var(--clay-dark);
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: #783925;
+  transform: translateY(-2px);
+}
+
+.danger-button:disabled,
+.secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+  transform: none;
+}
+
+.booking-delete-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(30 45 38 / 58%);
+}
+
+.booking-delete-dialog {
+  width: min(100%, 460px);
+  padding: clamp(24px, 6vw, 34px);
+  border: 1px solid #d8aaa0;
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: 0 24px 70px rgb(22 29 24 / 35%);
+}
+
+.booking-delete-dialog h2 {
+  margin: 0;
+  color: var(--forest);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.55rem;
+  font-weight: 500;
+}
+
+.booking-delete-dialog > p {
+  margin: 14px 0 24px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.booking-delete-dialog .error-message {
+  margin-bottom: 18px;
+}
+
 .lead {
   max-width: 460px;
   margin: 24px 0 0;
@@ -1928,6 +2060,19 @@ h1 {
 
   .booking-date-grid,
   .booking-form__actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .booking-edit-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .booking-edit-card__actions {
+    grid-template-columns: repeat(2, minmax(112px, auto));
+  }
+
+  .booking-delete-dialog__actions {
     grid-template-columns: 1fr 1fr;
   }
 

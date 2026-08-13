@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { prepareBooking } from '../netlify/functions/_shared/booking-input.mts'
+import { prepareBooking, prepareBookingUpdate } from '../netlify/functions/_shared/booking-input.mts'
 
 const metadata = {
   id: 'booking-id',
@@ -40,5 +40,22 @@ describe('prepareBooking', () => {
   it('applies the length limit to the trimmed comment', () => {
     expect(prepareBooking({ ...validInput, comment: `  ${'a'.repeat(1000)}  ` }, metadata)).not.toBeNull()
     expect(prepareBooking({ ...validInput, comment: `  ${'a'.repeat(1001)}  ` }, metadata)).toBeNull()
+  })
+
+  it('preserves immutable metadata and updates updatedAt when editing', () => {
+    const existing = prepareBooking(validInput, metadata)
+    expect(existing).not.toBeNull()
+
+    expect(prepareBookingUpdate(
+      { ...validInput, comment: '  Endret  ' },
+      existing!,
+      '2026-08-13T12:00:00.000Z',
+    )).toMatchObject({
+      id: metadata.id,
+      ownerId: metadata.ownerId,
+      createdAt: metadata.timestamp,
+      updatedAt: '2026-08-13T12:00:00.000Z',
+      comment: 'Endret',
+    })
   })
 })

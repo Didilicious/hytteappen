@@ -4,7 +4,8 @@ import { useAuth } from './auth'
 import BookingCalendarPage from './pages/BookingCalendarPage'
 import BookingDetailsPage from './pages/BookingDetailsPage'
 import BookingLandingPage from './pages/BookingLandingPage'
-import BookingPlaceholderPage from './pages/BookingPlaceholderPage'
+import EditBookingPage from './pages/EditBookingPage'
+import EditBookingsPage from './pages/EditBookingsPage'
 import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -78,7 +79,15 @@ export default function App() {
         path="/booking/edit"
         element={
           <ProtectedRoute>
-            <BookingPlaceholderPage title="Rediger dine tider" />
+            <EditBookingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/booking/edit/:bookingId"
+        element={
+          <ProtectedRoute>
+            <EditBookingPage />
           </ProtectedRoute>
         }
       />

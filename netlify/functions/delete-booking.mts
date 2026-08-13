@@ -1,6 +1,6 @@
 import type { Config } from '@netlify/functions'
 import { isValidBookingId } from './_shared/booking-id.mts'
-import { readBooking } from './_shared/bookings.mts'
+import { deleteBooking, readBooking } from './_shared/bookings.mts'
 import {
   clearSessionCookie,
   getAuthenticatedFamilyMember,
@@ -8,25 +8,24 @@ import {
   type FamilyMember,
 } from './_shared/session.mts'
 
-type ReadBookingDependencies = {
+type DeleteBookingDependencies = {
   authenticate: (request: Request) => FamilyMember | null
   loadBooking: typeof readBooking
+  removeBooking: typeof deleteBooking
 }
 
-export { isValidBookingId }
-
-export function createReadBookingFunction({
+export function createDeleteBookingFunction({
   authenticate = getAuthenticatedFamilyMember,
   loadBooking = readBooking,
-}: Partial<ReadBookingDependencies> = {}) {
-  return async function readBookingFunction(request: Request) {
-    if (request.method !== 'GET') {
+  removeBooking = deleteBooking,
+}: Partial<DeleteBookingDependencies> = {}) {
+  return async function deleteBookingFunction(request: Request) {
+    if (request.method !== 'DELETE') {
       return jsonResponse({ message: 'Metoden er ikke tillatt.' }, { status: 405 })
     }
 
     try {
       const familyMember = authenticate(request)
-
       if (!familyMember) {
         return jsonResponse(
           { message: 'Økten har utløpt. Logg inn på nytt.' },
@@ -44,20 +43,23 @@ export function createReadBookingFunction({
         return jsonResponse({ message: 'Registreringen finnes ikke.' }, { status: 404 })
       }
 
-      const ownerOnly = new URL(request.url).searchParams.get('ownerOnly') === 'true'
-      if (ownerOnly && booking.ownerId !== familyMember.id) {
-        return jsonResponse({ message: 'Du kan bare redigere dine egne registreringer.' }, { status: 403 })
+      if (booking.ownerId !== familyMember.id) {
+        return jsonResponse({ message: 'Du kan bare slette dine egne registreringer.' }, { status: 403 })
       }
 
-      return jsonResponse({ booking })
+      await removeBooking(bookingId)
+      return new Response(null, {
+        status: 204,
+        headers: { 'Cache-Control': 'no-store' },
+      })
     } catch {
-      return jsonResponse({ message: 'Kunne ikke hente registreringen.' }, { status: 500 })
+      return jsonResponse({ message: 'Kunne ikke slette registreringen. Prøv igjen.' }, { status: 500 })
     }
   }
 }
 
-export default createReadBookingFunction()
+export default createDeleteBookingFunction()
 
 export const config: Config = {
-  method: 'GET',
+  method: 'DELETE',
 }

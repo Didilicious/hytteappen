@@ -43,6 +43,19 @@ describe('read booking endpoint', () => {
     expect(response.status).toBe(404)
   })
 
+  it('returns 403 when an edit load targets another family booking', async () => {
+    const handler = createReadBookingFunction({
+      authenticate: () => ({ id: 'mads', displayName: 'Mads' }),
+      loadBooking: vi.fn().mockResolvedValue(booking),
+    })
+
+    const response = await handler(new Request(
+      `https://example.com/.netlify/functions/read-booking?id=${bookingId}&ownerOnly=true`,
+    ))
+
+    expect(response.status).toBe(403)
+  })
+
   it('rejects invalid booking IDs before reading storage', async () => {
     const loadBooking = vi.fn()
     const handler = createReadBookingFunction({

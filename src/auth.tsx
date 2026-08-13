@@ -16,6 +16,7 @@ type AuthContextValue = {
   currentUser: FamilyMember | null
   login: (accountId: string, password: string) => Promise<LoginResult>
   logout: () => Promise<void>
+  expireSession: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -120,6 +121,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
         throw new Error('Logout failed')
       }
 
+      setCurrentUser(null)
+      setStatus('anonymous')
+    },
+    expireSession() {
       setCurrentUser(null)
       setStatus('anonymous')
     },

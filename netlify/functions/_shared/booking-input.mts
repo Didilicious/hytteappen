@@ -17,6 +17,30 @@ type BookingMetadata = {
 const datePattern = /^\d{4}-\d{2}-\d{2}$/
 
 export function prepareBooking(input: BookingInput, metadata: BookingMetadata): Booking | null {
+  const values = validateBookingInput(input)
+  if (!values) return null
+
+  return {
+    id: metadata.id,
+    ownerId: metadata.ownerId,
+    ...values,
+    createdAt: metadata.timestamp,
+    updatedAt: metadata.timestamp,
+  }
+}
+
+export function prepareBookingUpdate(input: BookingInput, existing: Booking, timestamp: string): Booking | null {
+  const values = validateBookingInput(input)
+  if (!values) return null
+
+  return {
+    ...existing,
+    ...values,
+    updatedAt: timestamp,
+  }
+}
+
+function validateBookingInput(input: BookingInput) {
   const { fromDate, toDate, welcomesOthers, partialFamily } = input
   const comment = typeof input.comment === 'string' ? input.comment.trim() : input.comment ?? ''
 
@@ -35,14 +59,10 @@ export function prepareBooking(input: BookingInput, metadata: BookingMetadata): 
   }
 
   return {
-    id: metadata.id,
-    ownerId: metadata.ownerId,
     fromDate,
     toDate,
     welcomesOthers,
     partialFamily,
     comment,
-    createdAt: metadata.timestamp,
-    updatedAt: metadata.timestamp,
   }
 }

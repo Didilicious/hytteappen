@@ -1,6 +1,7 @@
 import type { Config } from '@netlify/functions'
 import { isValidBookingId } from './_shared/booking-id.mts'
-import { readBooking } from './_shared/bookings.mts'
+import { prepareBookingUpdate, type BookingInput } from './_shared/booking-input.mts'
+import { readBooking, updateBooking } from './_shared/bookings.mts'
 import {
   clearSessionCookie,
   getAuthenticatedFamilyMember,
@@ -8,25 +9,26 @@ import {
   type FamilyMember,
 } from './_shared/session.mts'
 
-type ReadBookingDependencies = {
+type UpdateBookingDependencies = {
   authenticate: (request: Request) => FamilyMember | null
   loadBooking: typeof readBooking
+  saveBooking: typeof updateBooking
+  now: () => string
 }
 
-export { isValidBookingId }
-
-export function createReadBookingFunction({
+export function createUpdateBookingFunction({
   authenticate = getAuthenticatedFamilyMember,
   loadBooking = readBooking,
-}: Partial<ReadBookingDependencies> = {}) {
-  return async function readBookingFunction(request: Request) {
-    if (request.method !== 'GET') {
+  saveBooking = updateBooking,
+  now = () => new Date().toISOString(),
+}: Partial<UpdateBookingDependencies> = {}) {
+  return async function updateBookingFunction(request: Request) {
+    if (request.method !== 'PATCH') {
       return jsonResponse({ message: 'Metoden er ikke tillatt.' }, { status: 405 })
     }
 
     try {
       const familyMember = authenticate(request)
-
       if (!familyMember) {
         return jsonResponse(
           { message: 'Økten har utløpt. Logg inn på nytt.' },
@@ -39,25 +41,30 @@ export function createReadBookingFunction({
         return jsonResponse({ message: 'Ugyldig registrering.' }, { status: 400 })
       }
 
-      const booking = await loadBooking(bookingId)
-      if (!booking) {
+      const existingBooking = await loadBooking(bookingId)
+      if (!existingBooking) {
         return jsonResponse({ message: 'Registreringen finnes ikke.' }, { status: 404 })
       }
 
-      const ownerOnly = new URL(request.url).searchParams.get('ownerOnly') === 'true'
-      if (ownerOnly && booking.ownerId !== familyMember.id) {
+      if (existingBooking.ownerId !== familyMember.id) {
         return jsonResponse({ message: 'Du kan bare redigere dine egne registreringer.' }, { status: 403 })
       }
 
+      const booking = prepareBookingUpdate(await request.json() as BookingInput, existingBooking, now())
+      if (!booking) {
+        return jsonResponse({ message: 'Kontroller opplysningene og prøv igjen.' }, { status: 400 })
+      }
+
+      await saveBooking(booking)
       return jsonResponse({ booking })
     } catch {
-      return jsonResponse({ message: 'Kunne ikke hente registreringen.' }, { status: 500 })
+      return jsonResponse({ message: 'Kunne ikke lagre endringene. Prøv igjen.' }, { status: 500 })
     }
   }
 }
 
-export default createReadBookingFunction()
+export default createUpdateBookingFunction()
 
 export const config: Config = {
-  method: 'GET',
+  method: 'PATCH',
 }
