@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getFamilyMember } from '../../shared/familyMembers'
-import type { NoticeboardPost } from '../../shared/noticeboard'
+import type { NoticeboardPost, NoticeboardPostSummary } from '../../shared/noticeboard'
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import NoticeboardTypeIcon from '../components/NoticeboardTypeIcon'
@@ -21,7 +21,7 @@ function formatCreationDate(value: string) {
 export default function NoticeboardPage() {
   const navigate = useNavigate()
   const { currentUser, expireSession } = useAuth()
-  const [posts, setPosts] = useState<NoticeboardPost[]>([])
+  const [posts, setPosts] = useState<NoticeboardPostSummary[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
   const [solvingPostId, setSolvingPostId] = useState<string | null>(null)
@@ -99,17 +99,33 @@ export default function NoticeboardPage() {
 
               return (
                 <article className={`noticeboard-card noticeboard-card--${post.type === 'Info' ? 'info' : post.type === 'Spørsmål' ? 'question' : 'todo'}`} key={post.id}>
-                  <div className="noticeboard-card__type">
-                    <span className="noticeboard-card__icon"><NoticeboardTypeIcon type={post.type} /></span>
-                    <span>{post.type}</span>
+                  <div className="noticeboard-card__header">
+                    <div className="noticeboard-card__type">
+                      <span className="noticeboard-card__icon"><NoticeboardTypeIcon type={post.type} /></span>
+                      <span>{post.type}</span>
+                    </div>
+                    <span className="noticeboard-card__unread-slot">
+                      {post.unread && (
+                        <span className="noticeboard-card__unread-dot">
+                          <span className="visually-hidden">Ulest aktivitet</span>
+                        </span>
+                      )}
+                    </span>
                   </div>
-                  <h2>{post.title}</h2>
+                  <h2><Link to={`/noticeboard/${post.id}`}>{post.title}</Link></h2>
                   {post.description && <p className="noticeboard-card__description">{post.description}</p>}
                   <p className="noticeboard-card__meta">
                     <span>{owner?.displayName ?? 'Ukjent familie'}</span>
                     <span aria-hidden="true">·</span>
                     <time dateTime={post.createdAt}>{formatCreationDate(post.createdAt)}</time>
                   </p>
+                  <Link className="noticeboard-card__comments" to={`/noticeboard/${post.id}`}>
+                    {post.commentCount === 0
+                      ? 'Ingen kommentarer'
+                      : post.commentCount === 1
+                        ? '1 kommentar'
+                        : `${post.commentCount} kommentarer`}
+                  </Link>
                   {isOwner && (
                     <button
                       className="noticeboard-solve-button"
@@ -128,6 +144,10 @@ export default function NoticeboardPage() {
 
         {status !== 'error' && errorMessage && <p className="error-message" role="alert">{errorMessage}</p>}
       </section>
+
+      <Link className="secondary-button noticeboard-solved-link" to="/noticeboard/solved">
+        Vis løste innlegg
+      </Link>
     </AppFrame>
   )
 }

@@ -110,6 +110,10 @@ describe('listing open noticeboard posts', () => {
     const handler = createReadNoticeboardPostsFunction({
       authenticate: () => authenticatedUser,
       loadPosts: vi.fn().mockResolvedValue([olderPost, solvedPost, newerPost]),
+      loadComments: vi.fn().mockResolvedValue([]),
+      loadPostReads: vi.fn().mockResolvedValue({}),
+      saveLastSeen: vi.fn(),
+      savePostsSeen: vi.fn(),
     })
 
     const response = await handler(new Request('https://example.com/.netlify/functions/read-noticeboard-posts'))
@@ -119,22 +123,33 @@ describe('listing open noticeboard posts', () => {
     expect(body.posts.map((post) => post.id)).toEqual([newerPost.id, olderPost.id])
   })
 
-  it('allows every authenticated family to read the same posts', async () => {
+  it('allows every authenticated family to read the same post content with personalized unread state', async () => {
     const posts = [newerPost, olderPost]
     const anetteHandler = createReadNoticeboardPostsFunction({
       authenticate: () => authenticatedUser,
       loadPosts: vi.fn().mockResolvedValue(posts),
+      loadComments: vi.fn().mockResolvedValue([]),
+      loadPostReads: vi.fn().mockResolvedValue({}),
+      saveLastSeen: vi.fn(),
+      savePostsSeen: vi.fn(),
     })
     const madsHandler = createReadNoticeboardPostsFunction({
       authenticate: () => otherUser,
       loadPosts: vi.fn().mockResolvedValue(posts),
+      loadComments: vi.fn().mockResolvedValue([]),
+      loadPostReads: vi.fn().mockResolvedValue({}),
+      saveLastSeen: vi.fn(),
+      savePostsSeen: vi.fn(),
     })
     const requestUrl = 'https://example.com/.netlify/functions/read-noticeboard-posts'
 
-    const anetteBody = await (await anetteHandler(new Request(requestUrl))).json()
-    const madsBody = await (await madsHandler(new Request(requestUrl))).json()
+    const anetteBody = await (await anetteHandler(new Request(requestUrl))).json() as { posts: Array<NoticeboardPost & { unread: boolean }> }
+    const madsBody = await (await madsHandler(new Request(requestUrl))).json() as { posts: Array<NoticeboardPost & { unread: boolean }> }
 
-    expect(madsBody).toEqual(anetteBody)
+    expect(madsBody.posts.map(({ unread: _unread, ...post }) => post))
+      .toEqual(anetteBody.posts.map(({ unread: _unread, ...post }) => post))
+    expect(anetteBody.posts.find((post) => post.id === newerPost.id)?.unread).toBe(false)
+    expect(madsBody.posts.find((post) => post.id === newerPost.id)?.unread).toBe(false)
   })
 })
 
@@ -190,6 +205,10 @@ describe('solving noticeboard posts', () => {
     const listHandler = createReadNoticeboardPostsFunction({
       authenticate: () => authenticatedUser,
       loadPosts: async () => [storedPost],
+      loadComments: vi.fn().mockResolvedValue([]),
+      loadPostReads: vi.fn().mockResolvedValue({}),
+      saveLastSeen: vi.fn(),
+      savePostsSeen: vi.fn(),
     })
 
     await solveHandler(new Request(`https://example.com/.netlify/functions/solve-noticeboard-post?id=${postId}`, { method: 'PATCH' }))

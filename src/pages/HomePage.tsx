@@ -4,6 +4,7 @@ import type { GuideImage } from '../../shared/guideImages'
 import AppFrame from '../components/AppFrame'
 import { loadHomeIcons } from '../guideImages'
 import { currentHomeIconNames, homeIconNames } from '../homeIcons'
+import { loadNoticeboardUnseenCount } from '../noticeboard'
 
 type HomeIconProps = {
   driveIcon?: GuideImage | null
@@ -41,6 +42,7 @@ function HomeIcon({ driveIcon, name }: HomeIconProps) {
 export default function HomePage() {
   const navigate = useNavigate()
   const [iconsByName, setIconsByName] = useState<Record<string, GuideImage | null>>({})
+  const [noticeboardUnseenCount, setNoticeboardUnseenCount] = useState(0)
 
   useEffect(() => {
     let isActive = true
@@ -52,6 +54,20 @@ export default function HomePage() {
       .catch(() => {
         warnAboutHomeIcon('Kunne ikke laste hjem-ikoner fra Google Drive. Ikonområdene forblir tomme.')
       })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let isActive = true
+
+    loadNoticeboardUnseenCount()
+      .then((count) => {
+        if (isActive) setNoticeboardUnseenCount(count)
+      })
+      .catch(() => undefined)
 
     return () => {
       isActive = false
@@ -123,11 +139,16 @@ export default function HomePage() {
         </button>
 
         <button className="task-button" type="button" onClick={() => navigate('/noticeboard')}>
-          <span className="task-button__icon" aria-hidden="true">
+          <span className="task-button__icon task-button__icon--badged" aria-hidden="true">
             <HomeIcon
               driveIcon={iconsByName[homeIconNames.noticeboard]}
               name={homeIconNames.noticeboard}
             />
+            <span className="task-button__badge-slot">
+              {noticeboardUnseenCount > 0 && (
+                <span className="task-button__badge">{noticeboardUnseenCount}</span>
+              )}
+            </span>
           </span>
           <span className="task-button__label">Oppslagstavle</span>
           <span className="task-button__arrow" aria-hidden="true">→</span>

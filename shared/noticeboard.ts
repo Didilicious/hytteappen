@@ -12,3 +12,21 @@ export type NoticeboardPost = {
   createdAt: string
   updatedAt: string
 }
+
+export type NoticeboardPostSummary = NoticeboardPost & {
+  commentCount: number
+  unread: boolean
+}
+
+export type NoticeboardPostWithCommentCount = NoticeboardPost & {
+  commentCount: number
+}
+
+export type NoticeboardComment = {
+  id: string
+  postId: string
+  ownerId: string
+  text: string
+  createdAt: string
+  updatedAt: string
+}

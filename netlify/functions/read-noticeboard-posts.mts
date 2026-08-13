@@ -1,6 +1,13 @@
 import type { Config } from '@netlify/functions'
 import { prepareOpenNoticeboardPosts } from './_shared/noticeboard-input.mts'
-import { readOpenNoticeboardPosts } from './_shared/noticeboard-posts.mts'
+import {
+  isNoticeboardPostUnread,
+  readNoticeboardPostReads,
+  saveNoticeboardLastSeen,
+  saveNoticeboardPostsSeen,
+} from './_shared/noticeboard-activity.mts'
+import { readAllNoticeboardComments } from './_shared/noticeboard-comments.mts'
+import { readAllNoticeboardPosts } from './_shared/noticeboard-posts.mts'
 import {
   clearSessionCookie,
   getAuthenticatedFamilyMember,
@@ -10,12 +17,22 @@ import {
 
 type ReadNoticeboardPostsDependencies = {
   authenticate: (request: Request) => FamilyMember | null
-  loadPosts: typeof readOpenNoticeboardPosts
+  loadPosts: typeof readAllNoticeboardPosts
+  loadComments: typeof readAllNoticeboardComments
+  loadPostReads: typeof readNoticeboardPostReads
+  saveLastSeen: typeof saveNoticeboardLastSeen
+  savePostsSeen: typeof saveNoticeboardPostsSeen
+  now: () => string
 }
 
 export function createReadNoticeboardPostsFunction({
   authenticate = getAuthenticatedFamilyMember,
-  loadPosts = readOpenNoticeboardPosts,
+  loadPosts = readAllNoticeboardPosts,
+  loadComments = readAllNoticeboardComments,
+  loadPostReads = readNoticeboardPostReads,
+  saveLastSeen = saveNoticeboardLastSeen,
+  savePostsSeen = saveNoticeboardPostsSeen,
+  now = () => new Date().toISOString(),
 }: Partial<ReadNoticeboardPostsDependencies> = {}) {
   return async function readNoticeboardPostsFunction(request: Request) {
     if (request.method !== 'GET') {
@@ -31,7 +48,41 @@ export function createReadNoticeboardPostsFunction({
         )
       }
 
-      return jsonResponse({ posts: prepareOpenNoticeboardPosts(await loadPosts()) })
+      const seenThrough = now()
+      const [allPosts, comments, readThroughByPostId] = await Promise.all([
+        loadPosts(),
+        loadComments(),
+        loadPostReads(familyMember.id),
+      ])
+      const commentCounts = comments.reduce<Record<string, number>>((counts, comment) => {
+        counts[comment.postId] = (counts[comment.postId] ?? 0) + 1
+        return counts
+      }, {})
+      const openPosts = prepareOpenNoticeboardPosts(allPosts)
+      const visiblePostIds = openPosts
+        .filter((post) => post.createdAt <= seenThrough)
+        .map((post) => post.id)
+      const posts = openPosts.map((post) => ({
+        ...post,
+        commentCount: commentCounts[post.id] ?? 0,
+        unread: isNoticeboardPostUnread(
+          post,
+          comments,
+          familyMember.id,
+          {
+            ...readThroughByPostId[post.id],
+            postSeenThrough: visiblePostIds.includes(post.id)
+              ? seenThrough
+              : readThroughByPostId[post.id]?.postSeenThrough,
+          },
+        ),
+      }))
+      await Promise.all([
+        saveLastSeen(familyMember.id, seenThrough),
+        savePostsSeen(familyMember.id, visiblePostIds, seenThrough),
+      ])
+
+      return jsonResponse({ posts, seenThrough })
     } catch {
       return jsonResponse({ message: 'Kunne ikke hente innleggene.' }, { status: 500 })
     }
