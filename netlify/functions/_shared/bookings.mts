@@ -22,7 +22,7 @@ type StoredBooking = Partial<Booking> & {
 }
 
 function getBookingsStore() {
-  return getStore('bookings')
+  return getStore({ name: 'bookings', consistency: 'strong' })
 }
 
 export function normalizeStoredBooking(value: unknown): Booking | null {
@@ -64,6 +64,14 @@ export function normalizeStoredBooking(value: unknown): Booking | null {
 
 export async function createBooking(booking: Booking) {
   await getBookingsStore().setJSON(booking.id, booking)
+}
+
+export async function updateBooking(booking: Booking) {
+  await getBookingsStore().setJSON(booking.id, booking)
+}
+
+export async function deleteBooking(bookingId: string) {
+  await getBookingsStore().delete(bookingId)
 }
 
 export async function readBooking(bookingId: string) {
