@@ -1,6 +1,6 @@
 import type { Config } from '@netlify/functions'
 import type { GuideImagesResponse } from '../../shared/guideImages.ts'
-import { fetchDriveImages, matchDriveIcons, matchDriveImages } from './_shared/guide-images.mts'
+import { loadDriveImageIndex, matchDriveIcons, matchDriveImages } from './_shared/guide-images.mts'
 import { clearSessionCookie, getAuthenticatedFamilyMember, jsonResponse } from './_shared/session.mts'
 
 function readNames(request: Request, parameter: 'group' | 'icon') {
@@ -41,7 +41,7 @@ export default async function guideImages(request: Request) {
   }
 
   try {
-    const files = await fetchDriveImages()
+    const { files } = await loadDriveImageIndex()
     const body: GuideImagesResponse = {
       imagesByGroup: matchDriveImages(files, groups),
       iconsByName: matchDriveIcons(files, iconNames),
