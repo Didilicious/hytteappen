@@ -1,4 +1,4 @@
-import type { GuideContent, GuideContentId } from '../shared/guideContent'
+import type { GuideContent } from '../shared/guideContent'
 import type { GuideImage, GuideImagesResponse } from '../shared/guideImages'
 
 export type GuideImagesLoadState =
@@ -8,9 +8,9 @@ export type GuideImagesLoadState =
 
 let guideImagesPromise: Promise<Record<string, GuideImage[]>> | undefined
 
-export function collectImageGroups(contentById: Record<GuideContentId, GuideContent>) {
+export function collectImageGroups(content: readonly GuideContent[]) {
   return [...new Set(
-    Object.values(contentById)
+    content
       .map((content) => content.imageGroup?.trim())
       .filter((group): group is string => Boolean(group)),
   )]
@@ -53,9 +53,9 @@ function requestDriveImages(searchParams: URLSearchParams) {
   })
 }
 
-export function loadGuideImages(contentById: Record<GuideContentId, GuideContent>) {
+export function loadGuideImages(content: readonly GuideContent[]) {
   if (!guideImagesPromise) {
-    const groups = collectImageGroups(contentById)
+    const groups = collectImageGroups(content)
 
     if (groups.length === 0) {
       guideImagesPromise = Promise.resolve({})

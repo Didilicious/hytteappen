@@ -135,9 +135,9 @@ describe('home page Drive icons', () => {
   })
 
   it.each([
-    ['Åpne hytte', '/guide/open-cabin/get-key'],
-    ['Stenge hytte', '/guide/close-cabin/not-ready'],
-    ['Drift av hytte', '/guide/cabin-operations/not-ready'],
+    ['Åpne hytte', '/guide/open-cabin'],
+    ['Stenge hytte', '/guide/close-cabin'],
+    ['Drift av hytte', '/guide/cabin-operations'],
     ['Booke hyttetid', '/booking'],
     ['Oppslagstavle', '/noticeboard'],
     ['Familieoversikt', '/familieoversikt'],

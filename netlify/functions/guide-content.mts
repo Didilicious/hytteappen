@@ -1,5 +1,5 @@
 import type { Config } from '@netlify/functions'
-import { guideContentIds, type GuideContentResponse } from '../../shared/guideContent.ts'
+import type { GuideContentResponse } from '../../shared/guideContent.ts'
 import { normalizeGuideSheet } from './_shared/guide-sheet.mts'
 import {
   clearSessionCookie,
@@ -42,7 +42,7 @@ export default async function guideContent(request: Request) {
 
   try {
     const body: GuideContentResponse = {
-      contentById: normalizeGuideSheet(csv, guideContentIds, (name) => Netlify.env.get(name)),
+      content: normalizeGuideSheet(csv, (name) => Netlify.env.get(name)),
     }
     return jsonResponse(body)
   } catch {
