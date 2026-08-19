@@ -4,7 +4,6 @@ import {
   normalizeGuideSheet,
   parseAnswerRequirements,
 } from '../netlify/functions/_shared/guide-sheet.mts'
-import type { GuideContentId } from '../shared/guideContent'
 
 const headers = [
   'ID',
@@ -50,21 +49,21 @@ function publishedRow(overrides: Row = {}): Row {
   }
 }
 
-function normalize(rows: Row[], allowedIds: GuideContentId[] = ['strom']) {
-  return normalizeGuideSheet(makeCsv(rows), allowedIds, (name) => (
+function normalize(rows: Row[], warnings: string[] = []) {
+  return normalizeGuideSheet(makeCsv(rows), (name) => (
     name === 'KEY_BOX_CODE' ? 'TESTKODE' : undefined
-  ))
+  ), (warning) => warnings.push(warning))
 }
 
 describe('normalizeGuideSheet', () => {
-  it('matches published rows by code-defined content ID and ignores unknown IDs', () => {
+  it('turns every published row into content without code-defined IDs', () => {
     const result = normalize([
       publishedRow(),
-      publishedRow({ ID: 'ukjent-side', 'Tittel / Spørsmål': 'Skal ignoreres' }),
+      publishedRow({ ID: 'ny-side', Type: 'Spørsmål', 'Tittel / Spørsmål': 'Nytt spørsmål' }),
     ])
 
-    expect(result.strom.title).toBe('Slå på strømmen')
-    expect(result).not.toHaveProperty('ukjent-side')
+    expect(result.map((item) => item.id)).toEqual(['strom', 'ny-side'])
+    expect(result[1]).toMatchObject({ type: 'question', title: 'Nytt spørsmål' })
   })
 
   it('uses only Publisert JA rows', () => {
@@ -73,11 +72,11 @@ describe('normalizeGuideSheet', () => {
       publishedRow({ 'Tittel / Spørsmål': 'Publisert tekst' }),
     ])
 
-    expect(result.strom.title).toBe('Publisert tekst')
+    expect(result[0].title).toBe('Publisert tekst')
   })
 
   it('normalizes blank optional sections as null', () => {
-    const content = normalize([publishedRow()]).strom
+    const content = normalize([publishedRow()])[0]
 
     expect(content.location).toBeNull()
     expect(content.warning).toBeNull()
@@ -90,13 +89,13 @@ describe('normalizeGuideSheet', () => {
       publishedRow({
         'Instruksjoner (én linje = ett punkt)': ' Første punkt \n\n Andre punkt\nTredje punkt ',
       }),
-    ]).strom
+    ])[0]
 
     expect(content.instructions).toEqual(['Første punkt', 'Andre punkt', 'Tredje punkt'])
   })
 
   it('parses multiple Guide values', () => {
-    const content = normalize([publishedRow({ Guide: 'Åpne, Stenge, Drift' })]).strom
+    const content = normalize([publishedRow({ Guide: 'Åpne, Stenge, Drift' })])[0]
     expect(content.guides).toEqual(['Åpne', 'Stenge', 'Drift'])
   })
 
@@ -108,8 +107,8 @@ describe('normalizeGuideSheet', () => {
   })
 
   it('treats blank Kan hoppes over as true', () => {
-    expect(normalize([publishedRow({ 'Kan hoppes over': '' })]).strom.canSkip).toBe(true)
-    expect(normalize([publishedRow({ 'Kan hoppes over': 'NEI' })]).strom.canSkip).toBe(false)
+    expect(normalize([publishedRow({ 'Kan hoppes over': '' })])[0].canSkip).toBe(true)
+    expect(normalize([publishedRow({ 'Kan hoppes over': 'NEI' })])[0].canSkip).toBe(false)
   })
 
   it('replaces secure placeholders without exposing the placeholder token', () => {
@@ -117,23 +116,30 @@ describe('normalizeGuideSheet', () => {
       publishedRow({
         'Instruksjoner (én linje = ett punkt)': 'Bruk koden {{KEY_BOX_CODE}}.',
       }),
-    ]).strom
+    ])[0]
 
     expect(content.instructions).toEqual(['Bruk koden TESTKODE.'])
     expect(JSON.stringify(content)).not.toContain('KEY_BOX_CODE')
   })
 
-  it('rejects malformed requirements and IDs', () => {
+  it('logs and safely ignores malformed requirements and IDs', () => {
+    const warnings: string[] = []
     expect(() => parseAnswerRequirements('aarstid=Vinter')).toThrow(GuideSheetConfigurationError)
-    expect(() => normalize([publishedRow({ ID: 'Ugyldig ID' })])).toThrow(GuideSheetConfigurationError)
+    const content = normalize([
+      publishedRow({ 'Krever svar': 'aarstid=Vinter' }),
+      publishedRow({ ID: 'Ugyldig ID' }),
+    ], warnings)
+
+    expect(content).toHaveLength(1)
+    expect(content[0].answerRequirements).toEqual([])
+    expect(warnings).toHaveLength(2)
   })
 
-  it('rejects duplicate published IDs', () => {
-    expect(() => normalize([publishedRow(), publishedRow()])).toThrow(GuideSheetConfigurationError)
-  })
+  it('keeps the first duplicate published ID and logs a warning', () => {
+    const warnings: string[] = []
+    const content = normalize([publishedRow(), publishedRow()], warnings)
 
-  it('rejects missing published rows for code-defined pages', () => {
-    expect(() => normalizeGuideSheet(makeCsv([]), ['strom'], () => undefined))
-      .toThrow(GuideSheetConfigurationError)
+    expect(content).toHaveLength(1)
+    expect(warnings[0]).toContain('duplicate')
   })
 })

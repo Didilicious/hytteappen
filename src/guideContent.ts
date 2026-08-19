@@ -1,16 +1,14 @@
 import {
-  guideContentIds,
   type GuideContent,
-  type GuideContentId,
   type GuideContentResponse,
 } from '../shared/guideContent'
 
 export type GuideContentLoadState =
   | { status: 'loading' }
-  | { status: 'loaded'; contentById: Record<GuideContentId, GuideContent> }
+  | { status: 'loaded'; content: GuideContent[] }
   | { status: 'error'; kind: 'load' | 'configuration' }
 
-let guideContentPromise: Promise<Record<GuideContentId, GuideContent>> | undefined
+let guideContentPromise: Promise<GuideContent[]> | undefined
 
 function isGuideContent(value: unknown): value is GuideContent {
   if (!value || typeof value !== 'object') return false
@@ -26,13 +24,9 @@ function isGuideContent(value: unknown): value is GuideContent {
 
 function readContentResponse(value: unknown) {
   const response = value as Partial<GuideContentResponse> | null
-  if (!response?.contentById || typeof response.contentById !== 'object') return null
+  if (!Array.isArray(response?.content) || response.content.some((item) => !isGuideContent(item))) return null
 
-  for (const id of guideContentIds) {
-    if (!isGuideContent(response.contentById[id]) || response.contentById[id].id !== id) return null
-  }
-
-  return response.contentById as Record<GuideContentId, GuideContent>
+  return response.content as GuideContent[]
 }
 
 export function loadGuideContent() {
@@ -52,13 +46,13 @@ export function loadGuideContent() {
         throw error
       }
 
-      const contentById = readContentResponse(await response.json())
-      if (!contentById) {
+      const content = readContentResponse(await response.json())
+      if (!content) {
         const error = new Error('Invalid guide content response') as Error & { kind?: string }
         error.kind = 'configuration'
         throw error
       }
-      return contentById
+      return content
     })
   }
 

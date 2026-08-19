@@ -161,8 +161,8 @@ function parseCanSkip(value: string) {
 
 export function normalizeGuideSheet(
   csv: string,
-  allowedIds: readonly GuideContentId[],
   resolveEnvironmentValue: (name: string) => string | undefined,
+  warn: (message: string) => void = console.warn,
 ) {
   const rows = parseCsv(csv)
   const headerIndex = rows.findIndex((row) => row.includes(COLUMN.id) && row.includes(COLUMN.title))
@@ -178,8 +178,8 @@ export function normalizeGuideSheet(
     }
   }
 
-  const allowedIdSet = new Set(allowedIds)
-  const contentById = {} as Record<GuideContentId, GuideContent>
+  const content: GuideContent[] = []
+  const publishedIds = new Set<string>()
 
   for (const row of rows.slice(headerIndex + 1)) {
     const values = Object.fromEntries(headers.map((header, index) => [header, row[index] ?? '']))
@@ -187,12 +187,14 @@ export function normalizeGuideSheet(
 
     const id = values[COLUMN.id].trim()
     if (!validIdPattern.test(id)) {
-      throw new GuideSheetConfigurationError('A published row has a malformed ID.')
+      warn('Ignoring a published guide row with a malformed ID.')
+      continue
     }
-    if (!allowedIdSet.has(id as GuideContentId)) continue
-    if (contentById[id as GuideContentId]) {
-      throw new GuideSheetConfigurationError('The guide sheet contains a duplicate ID.')
+    if (publishedIds.has(id)) {
+      warn(`Ignoring duplicate published guide row "${id}".`)
+      continue
     }
+    publishedIds.add(id)
 
     const instructions = values[COLUMN.instructions]
       .split(/\r?\n/)
@@ -202,13 +204,20 @@ export function normalizeGuideSheet(
     const answerOptions = splitValues(values[COLUMN.answerOptions])
       .map((option) => replacePlaceholders(option, resolveEnvironmentValue))
 
-    contentById[id as GuideContentId] = {
+    let answerRequirements: AnswerRequirement[] = []
+    try {
+      answerRequirements = parseAnswerRequirements(values[COLUMN.answerRequirements])
+    } catch {
+      warn(`Ignoring malformed "Krever svar" for guide row "${id}".`)
+    }
+
+    content.push({
       id: id as GuideContentId,
       guides: parseGuides(values[COLUMN.guides]),
       type: parseType(values[COLUMN.type]),
       afterId: values[COLUMN.after].trim() || null,
       requiredStepIds: splitValues(values[COLUMN.requiredSteps]),
-      answerRequirements: parseAnswerRequirements(values[COLUMN.answerRequirements]),
+      answerRequirements,
       title: replacePlaceholders(values[COLUMN.title].trim(), resolveEnvironmentValue),
       location: optionalText(values[COLUMN.location], resolveEnvironmentValue),
       warning: optionalText(values[COLUMN.warning], resolveEnvironmentValue),
@@ -217,14 +226,8 @@ export function normalizeGuideSheet(
       answerOptions,
       canSkip: parseCanSkip(values[COLUMN.canSkip]),
       imageGroup: optionalText(values[COLUMN.imageGroup], resolveEnvironmentValue),
-    }
+    })
   }
 
-  for (const id of allowedIds) {
-    if (!contentById[id]) {
-      throw new GuideSheetConfigurationError('A code-defined guide page has no published row.')
-    }
-  }
-
-  return contentById
+  return content
 }

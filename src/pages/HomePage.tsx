@@ -53,7 +53,7 @@ export default function HomePage() {
         <button
           className="task-button"
           type="button"
-          onClick={() => navigate('/guide/open-cabin/get-key')}
+          onClick={() => navigate('/guide/open-cabin')}
         >
           <span className="task-button__icon" aria-hidden="true">
             <DriveIcon
@@ -69,7 +69,7 @@ export default function HomePage() {
         <button
           className="task-button"
           type="button"
-          onClick={() => navigate('/guide/close-cabin/not-ready')}
+          onClick={() => navigate('/guide/close-cabin')}
         >
           <span className="task-button__icon" aria-hidden="true">
             <DriveIcon
@@ -85,7 +85,7 @@ export default function HomePage() {
         <button
           className="task-button"
           type="button"
-          onClick={() => navigate('/guide/cabin-operations/not-ready')}
+          onClick={() => navigate('/guide/cabin-operations')}
         >
           <span className="task-button__icon" aria-hidden="true">
             <DriveIcon

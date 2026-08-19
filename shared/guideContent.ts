@@ -1,11 +1,4 @@
-export const guideContentIds = [
-  'nokkelboks',
-  'aarstid',
-  'strom',
-  'skru-pa-vann',
-] as const
-
-export type GuideContentId = typeof guideContentIds[number]
+export type GuideContentId = string
 export type GuideName = 'Åpne' | 'Stenge' | 'Drift'
 export type SheetNodeType = 'step' | 'question'
 
@@ -32,5 +25,5 @@ export type GuideContent = {
 }
 
 export type GuideContentResponse = {
-  contentById: Record<GuideContentId, GuideContent>
+  content: GuideContent[]
 }

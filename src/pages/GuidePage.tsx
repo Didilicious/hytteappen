@@ -3,24 +3,16 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import type { GuideContent } from '../../shared/guideContent'
 import GuideContentSections from '../components/GuideContentSections'
 import GuideLayout from '../components/GuideLayout'
-import type { GuideNode, InstructionNode, QuestionNode } from '../guideData'
 import { guides } from '../guideData'
 import { loadGuideContent, type GuideContentLoadState } from '../guideContent'
-import { loadGuideImages, type GuideImagesLoadState } from '../guideImages'
 import {
-  buildActivePath,
+  buildVisiblePages,
   getInstructionStatus,
   getQuestionStatus,
-  getSelectedOption,
+  orderGuidePages,
   type InstructionStatus,
 } from '../guideEngine'
-import {
-  buildVisiblePath,
-  getContentForNode,
-  getNodeTitle,
-  getSelectedAnswerLabel,
-  validateGuideContent,
-} from '../guideRequirements'
+import { loadGuideImages, type GuideImagesLoadState } from '../guideImages'
 import { useGuideState } from '../guideStorage'
 
 function GuideBackButton({ onClick }: { onClick: () => void }) {
@@ -38,26 +30,14 @@ function getOverviewStatusClass(status: string) {
   return 'overview-status--neutral'
 }
 
-function ResetGuideDialog({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void
-  onConfirm: () => void
-}) {
+function ResetGuideDialog({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
     const dialog = dialogRef.current
-
-    if (dialog && !dialog.open) {
-      dialog.showModal()
-    }
-
+    if (dialog && !dialog.open) dialog.showModal()
     return () => {
-      if (dialog?.open) {
-        dialog.close()
-      }
+      if (dialog?.open) dialog.close()
     }
   }, [])
 
@@ -94,37 +74,29 @@ function ResetGuideDialog({
 function QuestionContent({
   content,
   imageState,
-  node,
   onAnswer,
-  selectedOptionId,
+  selectedAnswer,
 }: {
   content: GuideContent
   imageState: GuideImagesLoadState
-  node: QuestionNode
-  onAnswer: (optionId: string, nextNodeId: string) => void
-  selectedOptionId?: string
+  onAnswer: (answer: string) => void
+  selectedAnswer?: string
 }) {
   return (
     <div className="guide-body page-enter page-enter--delay">
       <GuideContentSections content={content} imageState={imageState} />
       <div className="option-list">
-        {node.options.map((option, index) => (
+        {content.answerOptions.map((answer, index) => (
           <button
-            className={`option-button${selectedOptionId === option.id ? ' option-button--selected' : ''}`}
+            className={`option-button${selectedAnswer === answer ? ' option-button--selected' : ''}`}
             type="button"
-            disabled={option.disabled || !option.nextNodeId}
-            key={option.id}
-            onClick={() => option.nextNodeId && onAnswer(option.id, option.nextNodeId)}
+            key={`${index}-${answer}`}
+            onClick={() => onAnswer(answer)}
           >
             <span className="option-button__index">{String(index + 1).padStart(2, '0')}</span>
-            <span className="option-button__copy">
-              <span>{content.answerOptions[index]}</span>
-              {(option.disabled || !option.nextNodeId) && <small>Kommer senere</small>}
-            </span>
-            {selectedOptionId === option.id && <span className="option-button__status">Valgt</span>}
-            {!option.disabled && selectedOptionId !== option.id && (
-              <span className="option-button__arrow" aria-hidden="true">→</span>
-            )}
+            <span className="option-button__copy"><span>{answer}</span></span>
+            {selectedAnswer === answer && <span className="option-button__status">Valgt</span>}
+            {selectedAnswer !== answer && <span className="option-button__arrow" aria-hidden="true">→</span>}
           </button>
         ))}
       </div>
@@ -135,20 +107,17 @@ function QuestionContent({
 function InstructionContent({
   content,
   imageState,
-  node,
   status,
   onStatusChange,
 }: {
   content: GuideContent
   imageState: GuideImagesLoadState
-  node: InstructionNode
   status?: InstructionStatus
   onStatusChange: (status?: InstructionStatus) => void
 }) {
   return (
     <div className="guide-body page-enter page-enter--delay">
       <GuideContentSections content={content} imageState={imageState} />
-
       <div className="instruction-actions" aria-label="Status for steget">
         <button className="primary-button" type="button" onClick={() => onStatusChange('completed')}>
           Ferdig
@@ -175,35 +144,11 @@ function GuideContentError({ kind }: { kind: 'load' | 'configuration' }) {
       <h1>{kind === 'configuration' ? 'Guiden er feil konfigurert' : 'Kunne ikke laste guiden'}</h1>
       <p>
         {kind === 'configuration'
-          ? 'En publisert rad mangler eller inneholder ugyldige verdier. Kontakt den som vedlikeholder guiden.'
+          ? 'Regnearket mangler nødvendige kolonner eller inneholder ugyldige verdier.'
           : 'Google-regnearket er ikke tilgjengelig akkurat nå. Oppdater siden og prøv igjen.'}
       </p>
       <button className="secondary-button" type="button" onClick={() => window.location.reload()}>
         Oppdater siden
-      </button>
-    </div>
-  )
-}
-
-function CompletionContent({
-  node,
-  onComplete,
-}: {
-  node: Extract<GuideNode, { type: 'completion' }>
-  onComplete: () => void
-}) {
-  return (
-    <div className="guide-body page-enter page-enter--delay">
-      <div className="completion-mark" aria-hidden="true">
-        <svg viewBox="0 0 64 64" focusable="false">
-          <path d="m17 33 10 10 21-23" />
-        </svg>
-      </div>
-      <div className="completion-copy">
-        {node.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-      </div>
-      <button className="primary-button" type="button" onClick={onComplete}>
-        {node.actionLabel}
       </button>
     </div>
   )
@@ -216,23 +161,15 @@ export default function GuidePage() {
   const [contentState, setContentState] = useState<GuideContentLoadState>({ status: 'loading' })
   const [imageState, setImageState] = useState<GuideImagesLoadState>({ status: 'loading' })
   const guide = guideId ? guides[guideId] : undefined
-  const {
-    answers,
-    progress,
-    saveAnswer,
-    saveInstructionStatus,
-    resetGuideState,
-  } = useGuideState(guideId ?? '')
+  const { answers, progress, saveAnswer, saveInstructionStatus, resetGuideState } = useGuideState(guideId ?? '')
 
   useEffect(() => {
     let isActive = true
-
     loadGuideContent()
-      .then((contentById) => {
+      .then((content) => {
         if (!isActive) return
-        setContentState({ status: 'loaded', contentById })
-
-        loadGuideImages(contentById)
+        setContentState({ status: 'loaded', content })
+        loadGuideImages(content)
           .then((imagesByGroup) => {
             if (isActive) setImageState({ status: 'loaded', imagesByGroup })
           })
@@ -248,45 +185,31 @@ export default function GuidePage() {
           })
         }
       })
-
     return () => {
       isActive = false
     }
   }, [])
 
-  if (!guide) {
-    return <Navigate to="/" replace />
-  }
+  if (!guide) return <Navigate to="/" replace />
 
   if (contentState.status === 'loading') {
-    return (
-      <GuideLayout guide={guide}>
-        <p className="guide-loading" aria-live="polite">Henter guideinnhold …</p>
-      </GuideLayout>
-    )
+    return <GuideLayout guide={guide}><p className="guide-loading" aria-live="polite">Henter guideinnhold …</p></GuideLayout>
   }
 
   if (contentState.status === 'error') {
     return <GuideLayout guide={guide}><GuideContentError kind={contentState.kind} /></GuideLayout>
   }
 
-  const { contentById } = contentState
-  if (!validateGuideContent(guide, contentById)) {
-    return <GuideLayout guide={guide}><GuideContentError kind="configuration" /></GuideLayout>
+  const { content } = contentState
+  const orderedPages = orderGuidePages(guide, content)
+  const visiblePages = buildVisiblePages(guide, content, answers, progress)
+  const nodePath = (targetNodeId: string) => `/guide/${guide.id}/${targetNodeId}`
+
+  if (!nodeId) {
+    return <Navigate to={visiblePages[0] ? nodePath(visiblePages[0].id) : nodePath('overview')} replace />
   }
 
-  const activePath = buildActivePath(guide, answers)
-  const visiblePath = buildVisiblePath(guide, answers, contentById)
-  const isOverview = !nodeId || nodeId === 'overview'
-  const currentGuideId = guide.id
-
-  function nodePath(targetNodeId: string) {
-    return `/guide/${currentGuideId}/${targetNodeId}`
-  }
-
-  if (isOverview) {
-    const visibleNodes = visiblePath.filter((node) => node.type !== 'completion')
-
+  if (nodeId === 'overview') {
     return (
       <GuideLayout guide={guide}>
         <div className="overview-heading page-enter">
@@ -295,33 +218,34 @@ export default function GuidePage() {
           <p className="lead">Her ser du stegene som gjelder for svarene dine nå.</p>
         </div>
 
-        <ol className="overview-list page-enter page-enter--delay">
-          {visibleNodes.map((node, index) => {
-            const status = node.type === 'question'
-              ? getQuestionStatus(getSelectedAnswerLabel(node, answers, contentById))
-              : getInstructionStatus(node.id, progress)
-
-            return (
-              <li key={node.id}>
-                <button className="overview-item" type="button" onClick={() => navigate(nodePath(node.id))}>
-                  <span className="overview-item__number">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="overview-item__copy">
-                    <strong>{getNodeTitle(node, contentById)}</strong>
-                    <span className={`overview-status ${getOverviewStatusClass(status)}`}>{status}</span>
-                  </span>
-                  <span className="overview-item__arrow" aria-hidden="true">→</span>
-                </button>
-              </li>
-            )
-          })}
-        </ol>
+        {visiblePages.length > 0 ? (
+          <ol className="overview-list page-enter page-enter--delay">
+            {visiblePages.map((page, index) => {
+              const status = page.type === 'question'
+                ? getQuestionStatus(answers[page.id])
+                : getInstructionStatus(page.id, progress)
+              return (
+                <li key={page.id}>
+                  <button className="overview-item" type="button" onClick={() => navigate(nodePath(page.id))}>
+                    <span className="overview-item__number">{String(index + 1).padStart(2, '0')}</span>
+                    <span className="overview-item__copy">
+                      <strong>{page.title}</strong>
+                      <span className={`overview-status ${getOverviewStatusClass(status)}`}>{status}</span>
+                    </span>
+                    <span className="overview-item__arrow" aria-hidden="true">→</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+        ) : (
+          <div className="guide-content-error page-enter page-enter--delay">
+            <p>Ingen publiserte sider er tilgjengelige for denne guiden ennå.</p>
+          </div>
+        )}
 
         <div className="overview-reset page-enter page-enter--delay">
-          <button
-            className="text-button overview-reset__button"
-            type="button"
-            onClick={() => setIsResetDialogOpen(true)}
-          >
+          <button className="text-button overview-reset__button" type="button" onClick={() => setIsResetDialogOpen(true)}>
             Nullstill fremdrift
           </button>
         </div>
@@ -331,7 +255,7 @@ export default function GuidePage() {
             onCancel={() => setIsResetDialogOpen(false)}
             onConfirm={() => {
               resetGuideState()
-              navigate(nodePath(guide.startNodeId), { replace: true })
+              navigate(`/guide/${guide.id}`, { replace: true })
             }}
           />
         )}
@@ -339,82 +263,69 @@ export default function GuidePage() {
     )
   }
 
-  const node = guide.nodes[nodeId]
-  const isVisible = visiblePath.some((pathNode) => pathNode.id === nodeId)
+  const page = orderedPages.find((candidate) => candidate.id === nodeId)
+  const visibleIndex = visiblePages.findIndex((candidate) => candidate.id === nodeId)
 
-  if (!node || !isVisible) {
-    const activeIndex = activePath.findIndex((pathNode) => pathNode.id === nodeId)
-    const visibleIds = new Set(visiblePath.map((pathNode) => pathNode.id))
-    const fallbackNode = activeIndex >= 0
-      ? activePath.slice(activeIndex + 1).find((pathNode) => visibleIds.has(pathNode.id))
-        ?? activePath.slice(0, activeIndex).reverse().find((pathNode) => visibleIds.has(pathNode.id))
-      : visiblePath.at(-1)
-    return <Navigate to={fallbackNode ? nodePath(fallbackNode.id) : '/'} replace />
+  if (!page || visibleIndex < 0) {
+    const orderedIndex = orderedPages.findIndex((candidate) => candidate.id === nodeId)
+    const visibleIds = new Set(visiblePages.map((candidate) => candidate.id))
+    const fallback = orderedIndex >= 0
+      ? orderedPages.slice(orderedIndex + 1).find((candidate) => visibleIds.has(candidate.id))
+        ?? orderedPages.slice(0, orderedIndex).reverse().find((candidate) => visibleIds.has(candidate.id))
+      : visiblePages[0]
+    return <Navigate to={fallback ? nodePath(fallback.id) : nodePath('overview')} replace />
   }
 
-  const visibleNodeIndex = visiblePath.findIndex((pathNode) => pathNode.id === node.id)
-  const previousNodeId = visibleNodeIndex > 0 ? visiblePath[visibleNodeIndex - 1].id : undefined
-  const content = getContentForNode(node, contentById)
-
-  function handleBack() {
-    navigate(previousNodeId ? nodePath(previousNodeId) : '/')
+  const currentPage = page
+  const previousPage = visiblePages[visibleIndex - 1]
+  const navigateAfter = (
+    currentPage: GuideContent,
+    nextAnswers = answers,
+    nextProgress = progress,
+  ) => {
+    const nextVisiblePages = buildVisiblePages(guide, content, nextAnswers, nextProgress)
+    const currentOrder = orderedPages.findIndex((candidate) => candidate.id === currentPage.id)
+    const nextPage = nextVisiblePages.find((candidate) => (
+      orderedPages.findIndex((orderedPage) => orderedPage.id === candidate.id) > currentOrder
+    ))
+    navigate(nextPage ? nodePath(nextPage.id) : nodePath('overview'))
   }
 
   function handleInstructionStatus(status?: InstructionStatus) {
-    saveInstructionStatus(node.id, status)
-
-    if (status && node.type === 'instruction') {
-      const nextNode = visiblePath[visibleNodeIndex + 1]
-      navigate(nextNode ? nodePath(nextNode.id) : '/')
+    saveInstructionStatus(currentPage.id, status)
+    if (status) {
+      navigateAfter(currentPage, answers, { ...progress, [currentPage.id]: status })
     }
   }
 
   return (
     <GuideLayout guide={guide}>
-      <GuideBackButton onClick={handleBack} />
-
+      <GuideBackButton onClick={() => navigate(previousPage ? nodePath(previousPage.id) : '/')} />
       <div className="guide-heading page-enter">
-        <p className="eyebrow">
-          {node.type === 'question' ? 'Velg det som passer' : node.type === 'instruction' ? 'Guide-steg' : 'Godt jobbet'}
-        </p>
-        <h1>{getNodeTitle(node, contentById)}</h1>
-        {node.type === 'instruction' && (
-          <p className="node-status">Status: {getInstructionStatus(node.id, progress)}</p>
+        <p className="eyebrow">{currentPage.type === 'question' ? 'Velg det som passer' : 'Guide-steg'}</p>
+        <h1>{currentPage.title}</h1>
+        {currentPage.type === 'step' && (
+          <p className="node-status">Status: {getInstructionStatus(currentPage.id, progress)}</p>
         )}
       </div>
 
-      {node.type === 'question' && (
+      {currentPage.type === 'question' ? (
         <QuestionContent
-          content={content as GuideContent}
+          content={currentPage}
           imageState={imageState}
-          node={node}
-          selectedOptionId={getSelectedOption(node, answers)?.id}
-          onAnswer={(optionId, nextNodeId) => {
-            saveAnswer(node.id, optionId)
-            const nextPath = buildVisiblePath(
-              guide,
-              { ...answers, [node.id]: optionId },
-              contentById,
-            )
-            const nextIndex = nextPath.findIndex((pathNode) => pathNode.id === node.id)
-            const nextNode = nextPath[nextIndex + 1]
-            navigate(nodePath(nextNode?.id ?? nextNodeId))
+          selectedAnswer={currentPage.answerOptions.includes(answers[currentPage.id]) ? answers[currentPage.id] : undefined}
+          onAnswer={(answer) => {
+            saveAnswer(currentPage.id, answer)
+            navigateAfter(currentPage, { ...answers, [currentPage.id]: answer })
           }}
         />
-      )}
-
-      {node.type === 'instruction' && (
+      ) : (
         <InstructionContent
-          content={content as GuideContent}
+          content={currentPage}
           imageState={imageState}
-          node={node}
-          status={progress[node.id]}
+          status={progress[currentPage.id]}
           onStatusChange={handleInstructionStatus}
         />
-      )}
-
-      {node.type === 'completion' && (
-        <CompletionContent node={node} onComplete={() => navigate(node.nextPath)} />
       )}
     </GuideLayout>
   )
