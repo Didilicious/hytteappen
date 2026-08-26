@@ -5,6 +5,7 @@ import type { NoticeboardPostWithCommentCount } from '../../shared/noticeboard'
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import NoticeboardTypeIcon from '../components/NoticeboardTypeIcon'
+import ProfileImage from '../components/ProfileImage'
 import { loadSolvedNoticeboardPosts } from '../noticeboard'
 
 const solvedDateFormatter = new Intl.DateTimeFormat('nb-NO', {
@@ -95,11 +96,21 @@ export default function SolvedNoticeboardPostsPage() {
                     <span className="noticeboard-card__solved-status">Løst</span>
                   </div>
                   <h2><Link to={`/noticeboard/${post.id}`}>{post.title}</Link></h2>
-                  <p className="noticeboard-card__meta">
-                    <span>{owner?.displayName ?? 'Ukjent familie'}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>Løst <time dateTime={post.updatedAt}>{formatSolvedDate(post.updatedAt)}</time></span>
-                  </p>
+                  <div className="noticeboard-card__author">
+                    {owner && (
+                      <ProfileImage
+                        familyId={owner.id}
+                        variant="family"
+                        alt=""
+                        className="noticeboard-family-avatar"
+                      />
+                    )}
+                    <p className="noticeboard-card__meta">
+                      <span>{owner?.displayName ?? 'Ukjent familie'}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>Løst <time dateTime={post.updatedAt}>{formatSolvedDate(post.updatedAt)}</time></span>
+                    </p>
+                  </div>
                   <Link className="noticeboard-card__comments" to={`/noticeboard/${post.id}`}>
                     {formatCommentCount(post.commentCount)}
                   </Link>

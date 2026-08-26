@@ -1328,30 +1328,83 @@ h1 {
 
 .calendar-birthday-indicator {
   position: absolute;
-  top: 7px;
-  right: 4px;
-  display: grid;
-  width: 23px;
-  height: 23px;
-  padding: 4px;
-  place-items: center;
+  z-index: 2;
+  top: 4px;
+  right: 2px;
+  display: flex;
+  min-width: 28px;
+  min-height: 28px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 2px;
   border: 1px solid #c8a974;
   border-radius: 999px;
   color: #78552b;
-  background: #fff4cf;
+  background: rgb(255 244 207 / 94%);
   box-shadow: 0 1px 3px rgb(69 50 23 / 14%);
   cursor: pointer;
 }
 
-.calendar-birthday-indicator svg,
-.birthday-dialog__icon svg {
+.calendar-birthday-indicator__portraits {
+  display: flex;
+  align-items: center;
+  padding-right: 3px;
+}
+
+.calendar-birthday-portrait,
+.calendar-birthday-portrait .profile-placeholder,
+.calendar-birthday-portrait img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.calendar-birthday-portrait {
+  margin-right: -7px;
+  box-shadow: 0 0 0 1px #fff4cf;
+}
+
+.calendar-birthday-portrait:last-child {
+  margin-right: 0;
+}
+
+.calendar-birthday-indicator__more {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  margin-left: -7px;
+  place-items: center;
+  border: 1px solid #c8a974;
+  border-radius: 50%;
+  color: #78552b;
+  background: #fff4cf;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.calendar-birthday-indicator__cue {
+  position: absolute;
+  right: -2px;
+  bottom: -3px;
+  display: grid;
+  width: 13px;
+  height: 13px;
+  padding: 2px;
+  place-items: center;
+  border: 1px solid #c8a974;
+  border-radius: 50%;
+  background: #fff4cf;
+  box-shadow: 0 1px 2px rgb(69 50 23 / 16%);
+}
+
+.calendar-birthday-indicator__cue svg {
   width: 100%;
   height: 100%;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.8;
+  stroke-width: 2;
 }
 
 .calendar-birthday-indicator:hover {
@@ -1538,24 +1591,35 @@ h1 {
   text-align: center;
 }
 
-.birthday-dialog__icon {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  margin: 0 auto 13px;
-  padding: 9px;
-  place-items: center;
-  border-radius: 999px;
-  color: #78552b;
-  background: #fff0bd;
-}
-
 .birthday-dialog h2 {
   margin: 0;
   color: var(--forest);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.4rem;
   font-weight: 500;
+}
+
+.birthday-dialog__person {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 13px;
+}
+
+.birthday-dialog__person--single {
+  justify-content: center;
+}
+
+.birthday-dialog__portrait,
+.birthday-dialog__portrait .profile-placeholder,
+.birthday-dialog__portrait img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+}
+
+.birthday-dialog__portrait {
+  box-shadow: 0 0 0 3px #fff4cf;
 }
 
 .birthday-dialog ul {
@@ -1567,8 +1631,17 @@ h1 {
 }
 
 .birthday-dialog li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid #e4d7bc;
+  border-radius: 14px;
   color: var(--ink);
+  background: rgb(255 253 248 / 76%);
   line-height: 1.4;
+  text-align: left;
 }
 
 .birthday-dialog__close {
@@ -2463,6 +2536,21 @@ h1 {
   font-weight: 700;
 }
 
+.noticeboard-card__author {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.noticeboard-family-avatar,
+.noticeboard-family-avatar .profile-placeholder,
+.noticeboard-family-avatar img {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
 .noticeboard-card__comments {
   justify-self: start;
   min-height: 44px;
@@ -2527,6 +2615,12 @@ h1 {
   font-weight: 750;
 }
 
+.noticeboard-detail__author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .noticeboard-comments {
   width: 100%;
   margin-top: 36px;
@@ -2574,10 +2668,18 @@ h1 {
 }
 
 .noticeboard-comment {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
   padding: 13px 15px;
   border-left: 3px solid #b5b8a7;
   border-radius: 0 10px 10px 0;
   background: #f4f1e9;
+}
+
+.noticeboard-comment__body {
+  min-width: 0;
 }
 
 .noticeboard-comment__meta {
