@@ -5,6 +5,7 @@ import type { NoticeboardPost, NoticeboardPostSummary } from '../../shared/notic
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import NoticeboardTypeIcon from '../components/NoticeboardTypeIcon'
+import ProfileImage from '../components/ProfileImage'
 import { loadOpenNoticeboardPosts, markNoticeboardPostSolved } from '../noticeboard'
 
 const noticeboardDateFormatter = new Intl.DateTimeFormat('nb-NO', {
@@ -114,11 +115,21 @@ export default function NoticeboardPage() {
                   </div>
                   <h2><Link to={`/noticeboard/${post.id}`}>{post.title}</Link></h2>
                   {post.description && <p className="noticeboard-card__description">{post.description}</p>}
-                  <p className="noticeboard-card__meta">
-                    <span>{owner?.displayName ?? 'Ukjent familie'}</span>
-                    <span aria-hidden="true">·</span>
-                    <time dateTime={post.createdAt}>{formatCreationDate(post.createdAt)}</time>
-                  </p>
+                  <div className="noticeboard-card__author">
+                    {owner && (
+                      <ProfileImage
+                        familyId={owner.id}
+                        variant="family"
+                        alt=""
+                        className="noticeboard-family-avatar"
+                      />
+                    )}
+                    <p className="noticeboard-card__meta">
+                      <span>{owner?.displayName ?? 'Ukjent familie'}</span>
+                      <span aria-hidden="true">·</span>
+                      <time dateTime={post.createdAt}>{formatCreationDate(post.createdAt)}</time>
+                    </p>
+                  </div>
                   <Link className="noticeboard-card__comments" to={`/noticeboard/${post.id}`}>
                     {post.commentCount === 0
                       ? 'Ingen kommentarer'

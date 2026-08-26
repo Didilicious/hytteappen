@@ -38,6 +38,8 @@ vi.mock('../src/profileImages', () => ({
     const cacheBust = version ? `&v=${version}` : ''
     return `/.netlify/functions/profile-image?familyId=${familyId}${suffix}${cacheBust}`
   },
+  getProfileImageVersion: () => undefined,
+  subscribeToProfileImageVersion: () => () => {},
   uploadProfileImage: state.uploadProfileImage,
 }));
 

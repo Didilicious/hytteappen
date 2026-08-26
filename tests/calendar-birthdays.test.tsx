@@ -73,6 +73,15 @@ describe('calendar birthdays', () => {
 
     expect(birthdayButton).not.toBeNull()
     expect(calendarDay?.querySelector('.calendar-booking')).not.toBeNull()
+    const portraits = [...birthdayButton!.querySelectorAll<HTMLImageElement>('.calendar-birthday-portrait img')]
+    expect(portraits).toHaveLength(2)
+    expect(portraits.map((portrait) => {
+      const url = new URL(portrait.src)
+      return [url.searchParams.get('familyId'), url.searchParams.get('memberId')]
+    })).toEqual([
+      ['christine', 'othelie'],
+      ['christine', 'emilie'],
+    ])
 
     await act(async () => birthdayButton?.click())
 
@@ -80,6 +89,15 @@ describe('calendar birthdays', () => {
     expect(dialog?.querySelector('h2')?.textContent).toBe('Bursdager')
     expect(dialog?.textContent).toContain('Othelies bursdag')
     expect(dialog?.textContent).toContain('Emilies bursdag')
+    const dialogPeople = [...dialog!.querySelectorAll<HTMLLIElement>('li')]
+    expect(dialogPeople.map((person) => {
+      const portrait = person.querySelector<HTMLImageElement>('.birthday-dialog__portrait img')
+      const url = new URL(portrait!.src)
+      return [person.textContent, url.searchParams.get('familyId'), url.searchParams.get('memberId')]
+    })).toEqual([
+      ['Othelies bursdag', 'christine', 'othelie'],
+      ['Emilies bursdag', 'christine', 'emilie'],
+    ])
     expect(dialog?.querySelector<HTMLButtonElement>('.birthday-dialog__close')).toBe(document.activeElement)
   })
 
@@ -97,13 +115,57 @@ describe('calendar birthdays', () => {
     expect(birthdayButton).not.toBeNull()
 
     await act(async () => birthdayButton?.click())
-    expect(container.querySelector('[role="dialog"] h2')?.textContent).toBe('Heidis bursdag')
+    const dialog = container.querySelector<HTMLElement>('[role="dialog"]')
+    const portrait = dialog?.querySelector<HTMLImageElement>('.birthday-dialog__portrait img')
+
+    expect(dialog?.querySelector('h2')?.textContent).toBe('Heidis bursdag')
+    expect(new URL(portrait!.src).searchParams.get('familyId')).toBe('heidi')
+    expect(new URL(portrait!.src).searchParams.get('memberId')).toBe('heidi')
   })
 
   it('shows a birthday without creating any booking element', async () => {
     const container = await renderCalendar('/booking/calendar?month=2026-02')
 
-    expect(container.querySelector('button[aria-label="Heidis bursdag"]')).not.toBeNull()
+    const birthdayButton = container.querySelector<HTMLButtonElement>('button[aria-label="Heidis bursdag"]')
+    const portrait = birthdayButton?.querySelector<HTMLImageElement>('.calendar-birthday-portrait img')
+
+    expect(birthdayButton).not.toBeNull()
+    expect(new URL(portrait!.src).searchParams.get('familyId')).toBe('heidi')
+    expect(new URL(portrait!.src).searchParams.get('memberId')).toBe('heidi')
     expect(container.querySelector('.calendar-booking')).toBeNull()
+  })
+
+  it('uses the individual placeholder when a birthday portrait is missing', async () => {
+    const container = await renderCalendar('/booking/calendar?month=2026-03')
+    const birthdayButton = container.querySelector<HTMLButtonElement>('button[aria-label="Auroras bursdag"]')
+    const portrait = birthdayButton?.querySelector<HTMLImageElement>('.calendar-birthday-portrait img')
+
+    expect(new URL(portrait!.src).searchParams.get('familyId')).toBe('heidi')
+    expect(new URL(portrait!.src).searchParams.get('memberId')).toBe('aurora')
+
+    await act(async () => portrait?.dispatchEvent(new Event('error')))
+
+    expect(birthdayButton?.querySelector('.calendar-birthday-portrait img')).toBeNull()
+    expect(birthdayButton?.querySelector('.profile-placeholder--member')).not.toBeNull()
+    expect(birthdayButton?.querySelector('.calendar-birthday-indicator__cue')).not.toBeNull()
+  })
+
+  it('uses the member placeholder when the popup portrait is missing', async () => {
+    const container = await renderCalendar('/booking/calendar?month=2026-03')
+    const birthdayButton = container.querySelector<HTMLButtonElement>('button[aria-label="Auroras bursdag"]')
+
+    await act(async () => birthdayButton?.click())
+
+    const dialog = container.querySelector<HTMLElement>('[role="dialog"]')
+    const portrait = dialog?.querySelector<HTMLImageElement>('.birthday-dialog__portrait img')
+    const portraitUrl = new URL(portrait!.src)
+
+    expect(portraitUrl.searchParams.get('familyId')).toBe('heidi')
+    expect(portraitUrl.searchParams.get('memberId')).toBe('aurora')
+
+    await act(async () => portrait?.dispatchEvent(new Event('error')))
+
+    expect(dialog?.querySelector('.birthday-dialog__portrait img')).toBeNull()
+    expect(dialog?.querySelector('.birthday-dialog__portrait .profile-placeholder--member')).not.toBeNull()
   })
 })

@@ -18,6 +18,7 @@ import {
   startOfMonth,
 } from '../calendar'
 import AppFrame from '../components/AppFrame'
+import ProfileImage from '../components/ProfileImage'
 import {
   calendarReturnStorageKey,
   getBookingDetailsPath,
@@ -301,7 +302,22 @@ export default function BookingCalendarPage() {
                         trigger: event.currentTarget,
                       })}
                     >
-                      <BirthdayIcon />
+                      <span className="calendar-birthday-indicator__portraits" aria-hidden="true">
+                        {dayBirthdays.slice(0, 3).map((birthday) => (
+                          <ProfileImage
+                            key={`${birthday.familyId}-${birthday.id}`}
+                            familyId={birthday.familyId}
+                            memberId={birthday.id}
+                            variant="member"
+                            alt=""
+                            className="calendar-birthday-portrait"
+                          />
+                        ))}
+                        {dayBirthdays.length > 3 && (
+                          <span className="calendar-birthday-indicator__more">+{dayBirthdays.length - 3}</span>
+                        )}
+                      </span>
+                      <span className="calendar-birthday-indicator__cue" aria-hidden="true"><BirthdayIcon /></span>
                     </button>
                   )}
                   <div className="calendar-day__bookings">
@@ -357,18 +373,33 @@ export default function BookingCalendarPage() {
             aria-modal="true"
             aria-labelledby="birthday-dialog-title"
           >
-            <div className="birthday-dialog__icon" aria-hidden="true"><BirthdayIcon /></div>
             {birthdayDialog.birthdays.length === 1 ? (
-              <h2 id="birthday-dialog-title">
-                {getBirthdayDescription(birthdayDialog.birthdays[0].displayName)}
-              </h2>
+              <div className="birthday-dialog__person birthday-dialog__person--single">
+                <ProfileImage
+                  familyId={birthdayDialog.birthdays[0].familyId}
+                  memberId={birthdayDialog.birthdays[0].id}
+                  variant="member"
+                  alt=""
+                  className="birthday-dialog__portrait"
+                />
+                <h2 id="birthday-dialog-title">
+                  {getBirthdayDescription(birthdayDialog.birthdays[0].displayName)}
+                </h2>
+              </div>
             ) : (
               <>
                 <h2 id="birthday-dialog-title">Bursdager</h2>
                 <ul>
                   {birthdayDialog.birthdays.map((birthday) => (
                     <li key={`${birthday.familyId}-${birthday.id}`}>
-                      {getBirthdayDescription(birthday.displayName)}
+                      <ProfileImage
+                        familyId={birthday.familyId}
+                        memberId={birthday.id}
+                        variant="member"
+                        alt=""
+                        className="birthday-dialog__portrait"
+                      />
+                      <span>{getBirthdayDescription(birthday.displayName)}</span>
                     </li>
                   ))}
                 </ul>

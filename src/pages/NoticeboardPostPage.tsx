@@ -5,6 +5,7 @@ import type { NoticeboardComment, NoticeboardPost } from '../../shared/noticeboa
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import NoticeboardTypeIcon from '../components/NoticeboardTypeIcon'
+import ProfileImage from '../components/ProfileImage'
 import {
   createNoticeboardComment,
   loadNoticeboardComments,
@@ -148,7 +149,20 @@ export default function NoticeboardPostPage() {
             <h1>{post.title}</h1>
             {post.description && <p className="noticeboard-detail__description">{post.description}</p>}
             <dl className="noticeboard-detail__meta">
-              <div><dt>Opprettet av</dt><dd>{getFamilyMember(post.ownerId)?.displayName ?? 'Ukjent familie'}</dd></div>
+              <div>
+                <dt>Opprettet av</dt>
+                <dd className="noticeboard-detail__author">
+                  {getFamilyMember(post.ownerId) && (
+                    <ProfileImage
+                      familyId={post.ownerId}
+                      variant="family"
+                      alt=""
+                      className="noticeboard-family-avatar"
+                    />
+                  )}
+                  <span>{getFamilyMember(post.ownerId)?.displayName ?? 'Ukjent familie'}</span>
+                </dd>
+              </div>
               <div><dt>Opprettet</dt><dd><time dateTime={post.createdAt}>{formatDate(post.createdAt)}</time></dd></div>
               <div><dt>Status</dt><dd>{post.status === 'open' ? 'Åpen' : 'Løst'}</dd></div>
             </dl>
@@ -169,15 +183,29 @@ export default function NoticeboardPostPage() {
             )}
             {comments.length > 0 && (
               <ol className="noticeboard-comment-list">
-                {comments.map((comment) => (
-                  <li className="noticeboard-comment" key={comment.id}>
-                    <div className="noticeboard-comment__meta">
-                      <strong>{getFamilyMember(comment.ownerId)?.displayName ?? 'Ukjent familie'}</strong>
-                      <time dateTime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
-                    </div>
-                    <p>{comment.text}</p>
-                  </li>
-                ))}
+                {comments.map((comment) => {
+                  const owner = getFamilyMember(comment.ownerId)
+
+                  return (
+                    <li className="noticeboard-comment" key={comment.id}>
+                      {owner && (
+                        <ProfileImage
+                          familyId={owner.id}
+                          variant="family"
+                          alt=""
+                          className="noticeboard-family-avatar noticeboard-comment__avatar"
+                        />
+                      )}
+                      <div className="noticeboard-comment__body">
+                        <div className="noticeboard-comment__meta">
+                          <strong>{owner?.displayName ?? 'Ukjent familie'}</strong>
+                          <time dateTime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
+                        </div>
+                        <p>{comment.text}</p>
+                      </div>
+                    </li>
+                  )
+                })}
               </ol>
             )}
 
