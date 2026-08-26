@@ -11,6 +11,8 @@ const state = vi.hoisted(() => ({
   readFamilyProfiles: vi.fn(),
   updateMemberProfile: vi.fn(),
   uploadProfileImage: vi.fn(),
+  loadProfileImageSource: vi.fn(),
+  createCroppedProfileImage: vi.fn(),
 }))
 
 vi.mock('../src/auth', () => ({
@@ -39,6 +41,16 @@ vi.mock('../src/profileImages', () => ({
   uploadProfileImage: state.uploadProfileImage,
 }));
 
+vi.mock('../src/profileImageProcessing', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../src/profileImageProcessing')>()
+  return {
+    ...original,
+    validateProfileImageSource: vi.fn(),
+    loadProfileImageSource: state.loadProfileImageSource,
+    createCroppedProfileImage: state.createCroppedProfileImage,
+  }
+});
+
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const auroraProfile: MemberProfile = {
@@ -63,10 +75,21 @@ describe('family profile contact UI', () => {
   let root: ReturnType<typeof createRoot> | undefined
 
   beforeEach(() => {
+    const image = document.createElement('img')
     state.currentUser = { id: 'heidi', displayName: 'Heidi' }
     state.readFamilyProfiles.mockReset().mockResolvedValue([auroraProfile])
     state.updateMemberProfile.mockReset()
     state.uploadProfileImage.mockReset()
+    state.loadProfileImageSource.mockReset().mockResolvedValue({
+      image,
+      url: 'blob:profile-preview',
+      width: 2000,
+      height: 1000,
+      dispose: vi.fn(),
+    })
+    state.createCroppedProfileImage.mockReset().mockResolvedValue(
+      new File([new Uint8Array([4, 5, 6])], 'profilbilde.webp', { type: 'image/webp' }),
+    )
   })
 
   afterEach(() => {
@@ -117,7 +140,7 @@ describe('family profile contact UI', () => {
     expect(container.querySelector('.profile-placeholder--member')).not.toBeNull()
   })
 
-  it('updates a member picture immediately and confirms the upload', async () => {
+  it('opens the shared crop dialog and updates a member picture immediately', async () => {
     state.uploadProfileImage.mockResolvedValue('2026-08-13T13:00:00.000Z')
     const container = await renderProfile()
     const auroraCard = [...container.querySelectorAll<HTMLElement>('.family-member-card')]
@@ -129,12 +152,67 @@ describe('family profile contact UI', () => {
     await act(async () => input?.dispatchEvent(new Event('change', { bubbles: true })))
     await settle()
 
-    expect(state.uploadProfileImage).toHaveBeenCalledWith({ familyId: 'heidi', memberId: 'aurora' }, file)
+    const dialog = document.querySelector<HTMLDialogElement>('.profile-crop-dialog')
+    expect(dialog?.textContent).toContain('Velg utsnitt')
+    expect(state.uploadProfileImage).not.toHaveBeenCalled()
+
+    const useButton = [...dialog!.querySelectorAll('button')].find((button) => button.textContent === 'Bruk bilde')
+    await act(async () => useButton?.click())
+    await settle()
+
+    const processedFile = state.createCroppedProfileImage.mock.results[0].value
+    await expect(processedFile).resolves.toMatchObject({ name: 'profilbilde.webp', type: 'image/webp' })
+    expect(state.uploadProfileImage).toHaveBeenCalledWith(
+      { familyId: 'heidi', memberId: 'aurora' },
+      expect.objectContaining({ name: 'profilbilde.webp', type: 'image/webp' }),
+    )
     expect(auroraCard?.querySelector<HTMLImageElement>('img')?.src).toContain('v=2026-08-13T13:00:00.000Z')
     expect(auroraCard?.textContent).toContain('Bildet er oppdatert.')
+    expect(document.querySelector('.profile-crop-dialog')).toBeNull()
   })
 
-  it('keeps the existing picture when an upload fails', async () => {
+  it('repositions and zooms the crop before processing', async () => {
+    state.uploadProfileImage.mockResolvedValue('2026-08-13T13:00:00.000Z')
+    const container = await renderProfile()
+    const input = container.querySelector<HTMLInputElement>('.family-profile-heading input[type="file"]')
+    const file = new File([new Uint8Array([1, 2, 3])], 'familie.jpg', { type: 'image/jpeg' })
+
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] })
+    await act(async () => input?.dispatchEvent(new Event('change', { bubbles: true })))
+    await settle()
+
+    const viewport = document.querySelector<HTMLElement>('.profile-crop-dialog__viewport')!
+    const image = viewport.querySelector<HTMLImageElement>('img')!
+    const initialTransform = image.style.transform
+
+    await act(async () => viewport.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })))
+    expect(image.style.transform).not.toBe(initialTransform)
+
+    const zoomButton = document.querySelector<HTMLButtonElement>('button[aria-label="Zoom inn"]')!
+    const movedTransform = image.style.transform
+    await act(async () => zoomButton.click())
+    expect(image.style.transform).not.toBe(movedTransform)
+  })
+
+  it('cancels the shared crop flow without uploading', async () => {
+    const container = await renderProfile()
+    const input = container.querySelector<HTMLInputElement>('.family-profile-heading input[type="file"]')
+    const file = new File([new Uint8Array([1, 2, 3])], 'familie.png', { type: 'image/png' })
+
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] })
+    await act(async () => input?.dispatchEvent(new Event('change', { bubbles: true })))
+    await settle()
+
+    const cancelButton = [...document.querySelectorAll<HTMLButtonElement>('.profile-crop-dialog button')]
+      .find((button) => button.textContent === 'Avbryt')
+    await act(async () => cancelButton?.click())
+
+    expect(state.createCroppedProfileImage).not.toHaveBeenCalled()
+    expect(state.uploadProfileImage).not.toHaveBeenCalled()
+    expect(document.querySelector('.profile-crop-dialog')).toBeNull()
+  })
+
+  it('keeps the family crop open and existing picture when upload fails', async () => {
     state.uploadProfileImage.mockRejectedValue(new Error('Opplastingen feilet. Prøv igjen.'))
     const container = await renderProfile()
     const familyImageBefore = container.querySelector<HTMLImageElement>('img[alt="Familiebilde for Heidi"]')?.src
@@ -145,8 +223,37 @@ describe('family profile contact UI', () => {
     await act(async () => familyInput?.dispatchEvent(new Event('change', { bubbles: true })))
     await settle()
 
+    const useButton = [...document.querySelectorAll<HTMLButtonElement>('.profile-crop-dialog button')]
+      .find((button) => button.textContent === 'Bruk bilde')
+    await act(async () => useButton?.click())
+    await settle()
+
     expect(container.querySelector<HTMLImageElement>('img[alt="Familiebilde for Heidi"]')?.src).toBe(familyImageBefore)
-    expect(container.textContent).toContain('Opplastingen feilet. Prøv igjen.')
+    expect(document.querySelector('.profile-crop-dialog')?.textContent).toContain('Opplastingen feilet. Prøv igjen.')
+    expect(document.querySelector('.profile-crop-dialog')).not.toBeNull()
+  })
+
+  it('keeps the existing picture when crop processing fails', async () => {
+    state.createCroppedProfileImage.mockRejectedValue(new Error('Bildet kunne ikke behandles. Prøv igjen.'))
+    const container = await renderProfile()
+    const memberImageBefore = container.querySelector<HTMLImageElement>('img[alt="Profilbilde av Aurora"]')?.src
+    const input = [...container.querySelectorAll<HTMLElement>('.family-member-card')]
+      .find((card) => card.querySelector('h3')?.textContent === 'Aurora')
+      ?.querySelector<HTMLInputElement>('input[type="file"]')
+    const file = new File([new Uint8Array([1, 2, 3])], 'aurora.webp', { type: 'image/webp' })
+
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] })
+    await act(async () => input?.dispatchEvent(new Event('change', { bubbles: true })))
+    await settle()
+
+    const useButton = [...document.querySelectorAll<HTMLButtonElement>('.profile-crop-dialog button')]
+      .find((button) => button.textContent === 'Bruk bilde')
+    await act(async () => useButton?.click())
+    await settle()
+
+    expect(state.uploadProfileImage).not.toHaveBeenCalled()
+    expect(container.querySelector<HTMLImageElement>('img[alt="Profilbilde av Aurora"]')?.src).toBe(memberImageBefore)
+    expect(document.querySelector('.profile-crop-dialog')?.textContent).toContain('Bildet kunne ikke behandles. Prøv igjen.')
   })
 
   it('hides empty sections and edit actions when viewing another family', async () => {
