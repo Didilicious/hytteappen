@@ -126,6 +126,18 @@ describe('family profile contact UI', () => {
     expect(container.querySelector('.member-contact-item__address')?.textContent).toBe('Eksempelveien 12\n0123 Oslo')
   })
 
+  it('shows the code-defined birthday without a birth year or edit control', async () => {
+    const container = await renderProfile()
+    const heidiCard = [...container.querySelectorAll<HTMLElement>('.family-member-card')]
+      .find((card) => card.querySelector('h3')?.textContent === 'Heidi')
+    const birthday = heidiCard?.querySelector('.family-member-birthday')
+
+    expect(birthday?.textContent).toContain('Bursdag')
+    expect(birthday?.textContent).toContain('6. februar')
+    expect(birthday?.textContent).not.toMatch(/\b\d{4}\b/)
+    expect(heidiCard?.querySelector('input[name*="birthday"], button[aria-label*="bursdag" i]')).toBeNull()
+  })
+
   it('shows the family and member pictures with neutral placeholders as fallback', async () => {
     const container = await renderProfile()
     const familyImage = container.querySelector<HTMLImageElement>('img[alt="Familiebilde for Heidi"]')
