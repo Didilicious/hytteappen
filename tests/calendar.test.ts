@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Booking } from '../src/bookings'
+import { getBirthdaysForDate } from '../src/birthdays'
 import {
   addMonths,
   createLocalDate,
@@ -65,6 +66,25 @@ describe('calendar dates and navigation', () => {
 
     expect(formatDateKey(addMonths(january, -1))).toBe('2025-12-01')
     expect(formatDateKey(addMonths(january, 1))).toBe('2026-02-01')
+  })
+
+  it('derives the same birthday from month and day in different years', () => {
+    expect(getBirthdaysForDate(createLocalDate(2026, 1, 6)).map(({ id }) => id)).toEqual(['heidi'])
+    expect(getBirthdaysForDate(createLocalDate(2027, 1, 6)).map(({ id }) => id)).toEqual(['heidi'])
+  })
+
+  it('returns every birthday sharing the same month and day', () => {
+    expect(getBirthdaysForDate(createLocalDate(2026, 4, 7)).map(({ id }) => id)).toEqual([
+      'othelie',
+      'emilie',
+    ])
+  })
+
+  it('keeps birthdays separate from booking records', () => {
+    const date = createLocalDate(2026, 1, 6)
+
+    expect(getBirthdaysForDate(date)).toHaveLength(1)
+    expect(getBookingsForDate([], formatDateKey(date))).toEqual([])
   })
 
   it('lays out complete weeks starting on Monday', () => {

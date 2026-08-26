@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { familyMembers } from '../../shared/familyMembers'
+import {
+  getBirthdayDescription,
+  getBirthdayIndicatorLabel,
+  getBirthdaysForDate,
+  type BirthdayMember,
+} from '../birthdays'
 import { normalizeBooking, resolveBookingOwner, type Booking } from '../bookings'
 import {
   addMonths,
@@ -53,6 +59,19 @@ function CalendarLoading() {
   )
 }
 
+function BirthdayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 10.5h14v9H5zM4 8h16v3H4zM12 8v11M7.5 8c-1.7 0-2.5-.8-2.5-2 0-1.1.8-2 2-2 2.1 0 3.5 2.5 4.5 4M16.5 8c1.7 0 2.5-.8 2.5-2 0-1.1-.8-2-2-2-2.1 0-3.5 2.5-4.5 4" />
+    </svg>
+  )
+}
+
+type BirthdayDialogState = {
+  birthdays: readonly BirthdayMember[]
+  trigger: HTMLButtonElement
+}
+
 export default function BookingCalendarPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -62,9 +81,19 @@ export default function BookingCalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(() => parseCalendarMonth(location.search, today))
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loadingState, setLoadingState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [birthdayDialog, setBirthdayDialog] = useState<BirthdayDialogState | null>(null)
   const pendingScrollPosition = useRef<{ x: number; y: number } | null>(null)
+  const birthdayCloseButtonRef = useRef<HTMLButtonElement>(null)
+
+  const closeBirthdayDialog = useCallback(() => {
+    setBirthdayDialog((current) => {
+      window.requestAnimationFrame(() => current?.trigger.focus())
+      return null
+    })
+  }, [])
 
   const changeMonth = useCallback((updateMonth: (month: Date) => Date) => {
+    setBirthdayDialog(null)
     pendingScrollPosition.current = { x: window.scrollX, y: window.scrollY }
     setSelectedMonth((month) => {
       const nextMonth = updateMonth(month)
@@ -72,6 +101,17 @@ export default function BookingCalendarPage() {
       return nextMonth
     })
   }, [navigate])
+
+  useEffect(() => {
+    if (!birthdayDialog) return
+
+    birthdayCloseButtonRef.current?.focus()
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeBirthdayDialog()
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [birthdayDialog, closeBirthdayDialog])
 
   useLayoutEffect(() => {
     const scrollPosition = pendingScrollPosition.current
@@ -239,6 +279,7 @@ export default function BookingCalendarPage() {
 
             {calendarDays.map((calendarDay) => {
               const dayBookings = getBookingsForDate(bookings, calendarDay.dateKey)
+              const dayBirthdays = getBirthdaysForDate(calendarDay.date)
               const weekday = calendarDay.date.getDay()
 
               return (
@@ -249,6 +290,20 @@ export default function BookingCalendarPage() {
                   key={calendarDay.dateKey}
                 >
                   <time dateTime={calendarDay.dateKey}>{calendarDay.date.getDate()}</time>
+                  {dayBirthdays.length > 0 && (
+                    <button
+                      type="button"
+                      className="calendar-birthday-indicator"
+                      aria-label={getBirthdayIndicatorLabel(dayBirthdays)}
+                      title={getBirthdayIndicatorLabel(dayBirthdays)}
+                      onClick={(event) => setBirthdayDialog({
+                        birthdays: dayBirthdays,
+                        trigger: event.currentTarget,
+                      })}
+                    >
+                      <BirthdayIcon />
+                    </button>
+                  )}
                   <div className="calendar-day__bookings">
                     {dayBookings.map((booking) => {
                       const owner = resolveBookingOwner(booking.ownerId)
@@ -290,6 +345,45 @@ export default function BookingCalendarPage() {
             <p className="calendar-empty" role="status">Ingen registrerte tider denne måneden.</p>
           )}
         </section>
+      )}
+
+      {birthdayDialog && (
+        <div className="birthday-dialog-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) closeBirthdayDialog()
+        }}>
+          <section
+            className="birthday-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="birthday-dialog-title"
+          >
+            <div className="birthday-dialog__icon" aria-hidden="true"><BirthdayIcon /></div>
+            {birthdayDialog.birthdays.length === 1 ? (
+              <h2 id="birthday-dialog-title">
+                {getBirthdayDescription(birthdayDialog.birthdays[0].displayName)}
+              </h2>
+            ) : (
+              <>
+                <h2 id="birthday-dialog-title">Bursdager</h2>
+                <ul>
+                  {birthdayDialog.birthdays.map((birthday) => (
+                    <li key={`${birthday.familyId}-${birthday.id}`}>
+                      {getBirthdayDescription(birthday.displayName)}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <button
+              ref={birthdayCloseButtonRef}
+              className="secondary-button birthday-dialog__close"
+              type="button"
+              onClick={closeBirthdayDialog}
+            >
+              Lukk
+            </button>
+          </section>
+        </div>
       )}
     </AppFrame>
   )

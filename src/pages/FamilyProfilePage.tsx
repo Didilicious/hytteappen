@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { formatBirthday } from '../birthdays'
 import AppFrame from '../components/AppFrame'
 import MemberContactEditor from '../components/MemberContactEditor'
 import ProfileImage from '../components/ProfileImage'
@@ -238,6 +239,11 @@ export default function FamilyProfilePage() {
                     )}
                   </div>
                 </div>
+
+                <dl className="family-member-birthday">
+                  <dt>Bursdag</dt>
+                  <dd>{formatBirthday(member.birthday)}</dd>
+                </dl>
 
                 {savedMemberId === member.id && (
                   <p className="member-profile-success" role="status">Endringene er lagret.</p>
