@@ -106,7 +106,7 @@ export default function HomePage() {
               warningLabel="hjem-ikonet"
             />
           </span>
-          <span className="task-button__label">Booke hyttetid</span>
+          <span className="task-button__label">Familiekalender</span>
           <span className="task-button__arrow" aria-hidden="true">→</span>
         </button>
 

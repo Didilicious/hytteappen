@@ -1426,6 +1426,68 @@ h1 {
   gap: 3px;
 }
 
+.calendar-day__events {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+
+.calendar-family-event {
+  display: flex;
+  min-width: 0;
+  min-height: 24px;
+  align-items: center;
+  gap: 3px;
+  margin-inline: 1px;
+  padding: 3px 5px;
+  overflow: hidden;
+  border: 1px solid #c69875;
+  border-radius: 6px;
+  color: #653e2d;
+  background: #fae6d6;
+  font-size: 0.58rem;
+  font-weight: 850;
+  line-height: 1.1;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-family-event:hover {
+  filter: brightness(0.97);
+}
+
+.calendar-family-event:focus-visible {
+  z-index: 2;
+  outline: 0;
+  box-shadow: inset 0 0 0 3px var(--clay-dark);
+}
+
+.calendar-family-event > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-family-event__icon {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+}
+
+.calendar-family-event__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.calendar-family-event--birthday { background: #f8dce4; border-color: #c8889b; color: #75364a; }
+.calendar-family-event--family-dinner { background: #f5e4c9; border-color: #c49b60; color: #684718; }
+.calendar-family-event--gingerbread-baking { background: #ead8c8; border-color: #a77d5f; color: #603b27; }
+.calendar-family-event--woods-trip { background: #dce9d8; border-color: #82a17b; color: #315a31; }
+
 .calendar-booking {
   position: relative;
   display: flex;
@@ -1980,6 +2042,19 @@ h1 {
   gap: 14px;
 }
 
+.registration-groups {
+  display: grid;
+  gap: 34px;
+}
+
+.registration-group-title {
+  margin: 0 0 14px;
+  color: var(--forest);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.25rem, 5vw, 1.65rem);
+  font-weight: 500;
+}
+
 .booking-edit-card {
   display: grid;
   gap: 22px;
@@ -1990,12 +2065,118 @@ h1 {
   box-shadow: 0 14px 34px rgb(35 43 36 / 8%);
 }
 
-.booking-edit-card__content h2 {
+.booking-edit-card__content h2,
+.booking-edit-card__content h3 {
   margin: 0;
   color: var(--forest);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.08rem, 4vw, 1.35rem);
   font-weight: 500;
+}
+
+.booking-edit-card__content .eyebrow {
+  margin: 0 0 6px;
+  color: var(--clay-dark);
+  white-space: normal;
+}
+
+.entry-type-grid {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  max-width: 720px;
+  margin-top: 30px;
+}
+
+.entry-type-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  min-height: 112px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  color: var(--ink);
+  background: #fffdf8;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgb(35 43 36 / 8%);
+}
+
+.entry-type-card:hover {
+  border-color: var(--forest);
+  transform: translateY(-2px);
+}
+
+.entry-type-card:focus-visible {
+  outline: 3px solid var(--clay-dark);
+  outline-offset: 3px;
+}
+
+.entry-type-card strong {
+  color: var(--forest);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+}
+
+.family-event-form .form-add-button {
+  width: fit-content;
+  margin-top: -12px;
+  text-align: left;
+}
+
+.family-event-form .address-button {
+  width: fit-content;
+  min-height: 46px;
+  margin-top: 10px;
+}
+
+.auto-resize-textarea {
+  overflow-y: hidden;
+  resize: none;
+}
+
+.field-group .auto-resize-textarea--single {
+  min-height: 58px;
+}
+
+.field-group .auto-resize-textarea--double {
+  min-height: 92px;
+}
+
+.family-event-details__icon {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 14px;
+  place-items: center;
+  border-radius: 18px;
+  background: #f6eee2;
+}
+
+.family-event-details__icon img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.family-event-details h1 {
+  margin: 4px 0 22px;
+  color: var(--forest);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.7rem, 7vw, 2.5rem);
+  font-weight: 500;
+}
+
+.preserve-lines {
+  white-space: pre-wrap;
+}
+
+.inline-link {
+  color: var(--forest);
+  font-weight: 800;
+  text-underline-offset: 3px;
 }
 
 .booking-edit-card__content p {
@@ -3475,6 +3656,11 @@ h1 {
     font-size: 0.68rem;
   }
 
+  .calendar-family-event {
+    min-height: 28px;
+    font-size: 0.68rem;
+  }
+
   .calendar-booking .calendar-owner-marker,
   .calendar-booking__full {
     display: inline-grid;
@@ -3517,6 +3703,25 @@ h1 {
 
   .calendar-booking {
     font-size: 0.52rem;
+  }
+
+  .calendar-family-event {
+    padding-inline: 2px;
+    font-size: 0.5rem;
+  }
+
+  .calendar-family-event__icon {
+    width: 12px;
+    height: 12px;
+    flex-basis: 12px;
+  }
+
+  .calendar-family-event > span:last-child {
+    display: none;
+  }
+
+  .entry-type-card > span:last-child {
+    display: none;
   }
 }
 

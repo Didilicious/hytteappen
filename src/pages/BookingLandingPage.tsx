@@ -13,9 +13,9 @@ type BookingAction = {
 }
 
 const bookingActions: BookingAction[] = [
-  { iconName: bookingIconNames.calendar, label: 'Se hyttekalender', path: '/booking/calendar' },
-  { iconName: bookingIconNames.newBooking, label: 'Registrer ny tid', path: '/booking/new' },
-  { iconName: bookingIconNames.editBookings, label: 'Rediger dine tider', path: '/booking/edit' },
+  { iconName: bookingIconNames.calendar, label: 'Se kalender', path: '/booking/calendar' },
+  { iconName: bookingIconNames.newBooking, label: 'Legg til i kalenderen', path: '/booking/new' },
+  { iconName: bookingIconNames.editBookings, label: 'Rediger dine registreringer', path: '/booking/edit' },
 ]
 
 export default function BookingLandingPage() {
@@ -57,8 +57,8 @@ export default function BookingLandingPage() {
       </button>
 
       <div className="booking-intro page-enter">
-        <p className="eyebrow">Hyttekalender</p>
-        <h1>Booke hyttetid</h1>
+        <p className="eyebrow">Familiekalender</p>
+        <h1>Familiekalender</h1>
         <p>Hva ønsker du å gjøre?</p>
       </div>
 

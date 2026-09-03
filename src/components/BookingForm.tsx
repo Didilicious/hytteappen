@@ -88,8 +88,12 @@ export default function BookingForm({
 
   return (
     <AppFrame showAccount>
+      <button className="back-button" type="button" onClick={onCancel} disabled={isSaving}>
+        <span aria-hidden="true">←</span>
+        Tilbake
+      </button>
       <div className="booking-form-heading page-enter">
-        <p className="eyebrow">Hyttekalender</p>
+        <p className="eyebrow">Familiekalender</p>
         <h1>{title}</h1>
         <p className="booking-family">
           Registreres for: <strong>{ownerName}</strong>

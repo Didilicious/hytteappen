@@ -47,7 +47,12 @@ describe('calendar birthdays', () => {
   })
 
   async function renderCalendar(initialEntry: string, bookings: unknown[] = []) {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ bookings }), { status: 200 })))
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('read-bookings')) return Promise.resolve(new Response(JSON.stringify({ bookings }), { status: 200 }))
+      if (url.includes('read-family-events')) return Promise.resolve(new Response(JSON.stringify({ events: [] }), { status: 200 }))
+      return Promise.resolve(new Response(JSON.stringify({ iconsByName: {} }), { status: 200 }))
+    }))
     Object.defineProperty(window, 'scrollTo', { configurable: true, value: vi.fn() })
     const container = document.createElement('div')
     document.body.append(container)

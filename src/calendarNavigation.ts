@@ -28,3 +28,7 @@ export function getCalendarPath(month: Date) {
 export function getBookingDetailsPath(bookingId: string) {
   return `/booking/${encodeURIComponent(bookingId)}`
 }
+
+export function getFamilyEventDetailsPath(eventId: string) {
+  return `/booking/event/${encodeURIComponent(eventId)}`
+}

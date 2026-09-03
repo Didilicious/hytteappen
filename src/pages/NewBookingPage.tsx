@@ -45,7 +45,7 @@ export default function NewBookingPage() {
       submitLabel="Lagre"
       submittingLabel="Lagrer …"
       onSubmit={createBooking}
-      onCancel={() => navigate('/booking')}
+      onCancel={() => navigate('/booking/new')}
     />
   )
 }

@@ -71,10 +71,16 @@ describe('booking management pages', () => {
     expect((container.querySelector('#booking-comment') as HTMLTextAreaElement).value).toBe('Ta med sengetøy.')
     expect(container.textContent).toContain('Registreres for: Anette')
     expect(container.textContent).toContain('Lagre endringer')
+    expect([...container.querySelectorAll('button')].some((button) => button.textContent?.includes('Tilbake'))).toBe(true)
   })
 
   it('requires confirmation before deleting a booking', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ bookings: [booking] }), { status: 200 }))
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      return Promise.resolve(new Response(JSON.stringify(
+        url.includes('read-own-family-events') ? { events: [] } : { bookings: [booking] },
+      ), { status: 200 }))
+    })
     vi.stubGlobal('fetch', fetchMock)
     const container = document.createElement('div')
     document.body.append(container)
@@ -92,7 +98,7 @@ describe('booking management pages', () => {
     const deleteButton = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Slett')
     act(() => deleteButton?.click())
 
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(container.querySelector('[role="alertdialog"]')).not.toBeNull()
     expect(container.textContent).toContain('Slett registreringen?')
     expect(container.textContent).toContain('20. august – 24. august 2026')

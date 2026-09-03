@@ -6,12 +6,16 @@ import BookingDetailsPage from './pages/BookingDetailsPage'
 import BookingLandingPage from './pages/BookingLandingPage'
 import EditBookingPage from './pages/EditBookingPage'
 import EditBookingsPage from './pages/EditBookingsPage'
+import EditFamilyEventPage from './pages/EditFamilyEventPage'
+import FamilyEventDetailsPage from './pages/FamilyEventDetailsPage'
 import FamilyOverviewPage from './pages/FamilyOverviewPage'
 import FamilyProfilePage from './pages/FamilyProfilePage'
 import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import NewBookingPage from './pages/NewBookingPage'
+import NewCalendarEntryPage from './pages/NewCalendarEntryPage'
+import NewFamilyEventPage from './pages/NewFamilyEventPage'
 import NewNoticeboardPostPage from './pages/NewNoticeboardPostPage'
 import NoticeboardPage from './pages/NoticeboardPage'
 import NoticeboardPostPage from './pages/NoticeboardPostPage'
@@ -125,10 +129,12 @@ export default function App() {
         path="/booking/new"
         element={
           <ProtectedRoute>
-            <NewBookingPage />
+            <NewCalendarEntryPage />
           </ProtectedRoute>
         }
       />
+      <Route path="/booking/new/booking" element={<ProtectedRoute><NewBookingPage /></ProtectedRoute>} />
+      <Route path="/booking/new/event" element={<ProtectedRoute><NewFamilyEventPage /></ProtectedRoute>} />
       <Route
         path="/booking/edit"
         element={
@@ -145,6 +151,8 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/booking/edit/event/:eventId" element={<ProtectedRoute><EditFamilyEventPage /></ProtectedRoute>} />
+      <Route path="/booking/event/:eventId" element={<ProtectedRoute><FamilyEventDetailsPage /></ProtectedRoute>} />
       <Route
         path="/booking/:bookingId"
         element={
