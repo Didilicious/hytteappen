@@ -4,6 +4,7 @@ import { familyEventTypes } from '../../shared/familyEvents'
 import { familyEventTypeLabels, type FamilyEventType } from '../familyEvents'
 import { readFamilyProfiles } from '../memberProfiles'
 import AppFrame from './AppFrame'
+import { DatePickerField, TimePickerField } from './DateTimePickerFields'
 
 export type FamilyEventFormValues = {
   eventType: FamilyEventType | ''
@@ -180,32 +181,42 @@ export default function FamilyEventForm({
         </div>
 
         <div className="booking-date-grid">
-          <div className="field-group">
-            <label htmlFor="event-start-date">Dato</label>
-            <input id="event-start-date" type="date" required value={values.startDate} onChange={(event) => setValue('startDate', event.target.value)} aria-invalid={Boolean(errors.startDate)} />
-            {errors.startDate && <p className="error-message">{errors.startDate}</p>}
-          </div>
+          <DatePickerField
+            id="event-start-date"
+            label="Dato"
+            required
+            value={values.startDate}
+            error={errors.startDate}
+            onChange={(value) => setValue('startDate', value)}
+          />
           {showEndDate && (
-            <div className="field-group">
-              <label htmlFor="event-end-date">Sluttdato</label>
-              <input id="event-end-date" type="date" min={values.startDate || undefined} value={values.endDate ?? ''} onChange={(event) => setValue('endDate', event.target.value || null)} aria-invalid={Boolean(errors.endDate)} />
-              {errors.endDate && <p className="error-message">{errors.endDate}</p>}
-            </div>
+            <DatePickerField
+              id="event-end-date"
+              label="Sluttdato"
+              min={values.startDate || undefined}
+              value={values.endDate ?? ''}
+              error={errors.endDate}
+              onChange={(value) => setValue('endDate', value || null)}
+            />
           )}
         </div>
         {!showEndDate && <button className="text-button form-add-button" type="button" onClick={() => setShowEndDate(true)}>+ Legg til sluttdato</button>}
 
         <div className="booking-date-grid">
-          <div className="field-group">
-            <label htmlFor="event-start-time">Tidspunkt</label>
-            <input id="event-start-time" type="time" value={values.startTime} onChange={(event) => setValue('startTime', event.target.value)} />
-          </div>
+          <TimePickerField
+            id="event-start-time"
+            label="Tidspunkt"
+            value={values.startTime}
+            onChange={(value) => setValue('startTime', value)}
+          />
           {showEndTime && (
-            <div className="field-group">
-              <label htmlFor="event-end-time">Slutt-tid</label>
-              <input id="event-end-time" type="time" value={values.endTime} onChange={(event) => setValue('endTime', event.target.value)} aria-invalid={Boolean(errors.endTime)} />
-              {errors.endTime && <p className="error-message">{errors.endTime}</p>}
-            </div>
+            <TimePickerField
+              id="event-end-time"
+              label="Slutt-tid"
+              value={values.endTime}
+              error={errors.endTime}
+              onChange={(value) => setValue('endTime', value)}
+            />
           )}
         </div>
         {!showEndTime && <button className="text-button form-add-button" type="button" onClick={() => setShowEndTime(true)}>+ Legg til Slutt-tid</button>}
