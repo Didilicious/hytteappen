@@ -79,4 +79,76 @@ describe('calendar entry choice', () => {
     act(() => backButton?.click())
     expect(onCancel).toHaveBeenCalledOnce()
   })
+
+  it('uses ISO week dates and finite 24-hour time controls', async () => {
+    const container = document.createElement('div')
+    document.body.append(container)
+    root = createRoot(container)
+    await act(async () => {
+      root?.render(
+        <MemoryRouter>
+          <FamilyEventForm
+            title="Nytt familiearrangement"
+            ownerId="anette"
+            ownerName="Anette"
+            initialValues={{
+              eventType: '',
+              title: '',
+              startDate: '2026-09-03',
+              endDate: null,
+              startTime: '',
+              endTime: '',
+              location: '',
+              wishlistUrl: '',
+              moreInfo: '',
+            }}
+            submitLabel="Lagre"
+            submittingLabel="Lagrer …"
+            onSubmit={vi.fn()}
+            onCancel={vi.fn()}
+          />
+        </MemoryRouter>,
+      )
+    })
+
+    const addEndTimeButton = [...container.querySelectorAll('button')]
+      .find((button) => button.textContent === '+ Legg til Slutt-tid')
+    expect(addEndTimeButton).not.toBeUndefined()
+    expect(container.textContent).toContain('Tidspunkt')
+    expect(container.textContent).not.toContain('Starttid')
+    expect(container.textContent).not.toContain('Sluttid')
+
+    const dateTrigger = container.querySelector<HTMLButtonElement>('[aria-controls="event-start-date-picker"]')
+    act(() => dateTrigger?.click())
+    const calendar = container.querySelector('.date-picker__calendar')
+    expect(calendar).not.toBeNull()
+    expect([...calendar?.querySelectorAll('thead th') ?? []].map((heading) => heading.textContent)).toEqual([
+      'Uke', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn',
+    ])
+    expect([...calendar?.querySelectorAll('.date-picker__week') ?? []].map((week) => week.textContent)).toContain('36')
+
+    act(() => dateTrigger?.click())
+    const timeTrigger = container.querySelector<HTMLButtonElement>('[aria-controls="event-start-time-picker"]')
+    act(() => timeTrigger?.click())
+    const hourButtons = [...container.querySelectorAll<HTMLButtonElement>('.time-picker__column[aria-label="Timer"] .time-picker__options button')]
+    const minuteButtons = [...container.querySelectorAll<HTMLButtonElement>('.time-picker__column[aria-label="Minutter"] .time-picker__options button')]
+
+    expect(hourButtons).toHaveLength(24)
+    expect(hourButtons[0].textContent).toBe('00')
+    expect(hourButtons.at(-1)?.textContent).toBe('23')
+    expect(minuteButtons).toHaveLength(60)
+    expect(minuteButtons[0].textContent).toBe('00')
+    expect(minuteButtons.at(-1)?.textContent).toBe('59')
+    expect(container.textContent).not.toMatch(/\b(?:AM|PM)\b/)
+
+    act(() => hourButtons.at(-1)?.click())
+    act(() => minuteButtons.at(-1)?.click())
+    const doneButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Ferdig')
+    act(() => doneButton?.click())
+
+    expect((container.querySelector('#event-start-time') as HTMLInputElement).value).toBe('23:59')
+    expect(timeTrigger?.textContent).toContain('23:59')
+    expect([...container.querySelectorAll('button')].find((button) => button.textContent === '+ Legg til Slutt-tid')).not.toBeUndefined()
+  })
 })
