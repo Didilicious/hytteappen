@@ -116,7 +116,7 @@ export default function EditBookingPage() {
   return (
     <AppFrame showAccount>
       <div className="booking-details-heading page-enter">
-        <p className="eyebrow">Hyttekalender</p>
+        <p className="eyebrow">Familiekalender</p>
         <h1>Rediger registrering</h1>
       </div>
       <section className={`booking-details-state${loadingState === 'error' ? ' booking-details-state--error' : ''}`}>
@@ -131,7 +131,7 @@ export default function EditBookingPage() {
         )}
         {loadingState !== 'loading' && (
           <button className="text-button" type="button" onClick={() => navigate('/booking/edit')}>
-            Tilbake til dine tider
+            Tilbake til dine registreringer
           </button>
         )}
       </section>

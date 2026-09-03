@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { familyMembers } from '../../shared/familyMembers'
+import type { GuideImage } from '../../shared/guideImages'
 import {
   getBirthdayDescription,
   getBirthdayIndicatorLabel,
@@ -18,14 +19,25 @@ import {
   startOfMonth,
 } from '../calendar'
 import AppFrame from '../components/AppFrame'
+import DriveIcon, { warnAboutMissingDriveIcons } from '../components/DriveIcon'
 import ProfileImage from '../components/ProfileImage'
 import {
   calendarReturnStorageKey,
   getBookingDetailsPath,
   getCalendarPath,
+  getFamilyEventDetailsPath,
   parseCalendarMonth,
   type CalendarReturnState,
 } from '../calendarNavigation'
+import {
+  currentFamilyEventIconNames,
+  familyEventIconNames,
+  familyEventTypeLabels,
+  getFamilyEventsForDate,
+  normalizeFamilyEvent,
+  type FamilyEvent,
+} from '../familyEvents'
+import { loadHomeIcons } from '../guideImages'
 
 const monthFormatter = new Intl.DateTimeFormat('nb-NO', { month: 'long', year: 'numeric' })
 const fullDateFormatter = new Intl.DateTimeFormat('nb-NO', {
@@ -52,7 +64,7 @@ function MonthButton({ direction, onClick }: { direction: 'previous' | 'next'; o
 function CalendarLoading() {
   return (
     <div className="calendar-loading" role="status" aria-live="polite">
-      <span className="calendar-loading__title">Henter registrerte tider …</span>
+      <span className="calendar-loading__title">Henter kalenderen …</span>
       <div className="calendar-skeleton" aria-hidden="true">
         {Array.from({ length: 35 }, (_, index) => <span key={index} />)}
       </div>
@@ -81,6 +93,8 @@ export default function BookingCalendarPage() {
   const currentMonth = startOfMonth(today)
   const [selectedMonth, setSelectedMonth] = useState(() => parseCalendarMonth(location.search, today))
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [familyEvents, setFamilyEvents] = useState<FamilyEvent[]>([])
+  const [eventIcons, setEventIcons] = useState<Record<string, GuideImage | null>>({})
   const [loadingState, setLoadingState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [birthdayDialog, setBirthdayDialog] = useState<BirthdayDialogState | null>(null)
   const pendingScrollPosition = useRef<{ x: number; y: number } | null>(null)
@@ -127,29 +141,35 @@ export default function BookingCalendarPage() {
     return () => window.cancelAnimationFrame(animationFrame)
   }, [selectedMonth])
 
-  const loadBookings = useCallback(async () => {
+  const loadCalendar = useCallback(async () => {
     setLoadingState('loading')
 
     try {
-      const response = await fetch('/.netlify/functions/read-bookings', {
-        credentials: 'include',
-        headers: { Accept: 'application/json' },
-      })
+      const [bookingsResponse, eventsResponse] = await Promise.all([
+        fetch('/.netlify/functions/read-bookings', { credentials: 'include', headers: { Accept: 'application/json' } }),
+        fetch('/.netlify/functions/read-family-events', { credentials: 'include', headers: { Accept: 'application/json' } }),
+      ])
 
-      if (response.status === 401) {
+      if (bookingsResponse.status === 401 || eventsResponse.status === 401) {
         window.location.replace('/login')
         return
       }
 
-      if (!response.ok) throw new Error('Failed to load bookings')
+      if (!bookingsResponse.ok || !eventsResponse.ok) throw new Error('Failed to load calendar')
 
-      const body = await response.json() as { bookings?: unknown }
-      if (!Array.isArray(body.bookings)) throw new Error('Invalid booking response')
+      const bookingsBody = await bookingsResponse.json() as { bookings?: unknown }
+      const eventsBody = await eventsResponse.json() as { events?: unknown }
+      if (!Array.isArray(bookingsBody.bookings) || !Array.isArray(eventsBody.events)) throw new Error('Invalid calendar response')
 
       setBookings(
-        body.bookings
+        bookingsBody.bookings
           .map(normalizeBooking)
           .filter((booking): booking is Booking => booking !== null),
+      )
+      setFamilyEvents(
+        eventsBody.events
+          .map(normalizeFamilyEvent)
+          .filter((event): event is FamilyEvent => event !== null),
       )
       setLoadingState('ready')
     } catch {
@@ -158,8 +178,16 @@ export default function BookingCalendarPage() {
   }, [])
 
   useEffect(() => {
-    void loadBookings()
-  }, [loadBookings])
+    void loadCalendar()
+  }, [loadCalendar])
+
+  useEffect(() => {
+    let isActive = true
+    loadHomeIcons(currentFamilyEventIconNames)
+      .then((icons) => { if (isActive) setEventIcons(icons) })
+      .catch(() => warnAboutMissingDriveIcons('arrangementsikonene'))
+    return () => { isActive = false }
+  }, [])
 
   useEffect(() => {
     const calendarPath = getCalendarPath(selectedMonth)
@@ -210,6 +238,18 @@ export default function BookingCalendarPage() {
     navigate(getBookingDetailsPath(bookingId), { state: { calendarPath } })
   }, [navigate, selectedMonth])
 
+  const openFamilyEvent = useCallback((eventId: string) => {
+    const calendarPath = getCalendarPath(selectedMonth)
+    try {
+      window.sessionStorage.setItem(calendarReturnStorageKey, JSON.stringify({
+        path: calendarPath,
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+      } satisfies CalendarReturnState))
+    } catch {}
+    navigate(getFamilyEventDetailsPath(eventId), { state: { calendarPath } })
+  }, [navigate, selectedMonth])
+
   const calendarDays = getCalendarDays(selectedMonth)
   const isCurrentMonth = selectedMonth.getFullYear() === currentMonth.getFullYear()
     && selectedMonth.getMonth() === currentMonth.getMonth()
@@ -218,21 +258,21 @@ export default function BookingCalendarPage() {
     <AppFrame showAccount>
       <button className="back-button" type="button" onClick={() => navigate('/booking')}>
         <span aria-hidden="true">←</span>
-        Tilbake til booking
+        Tilbake til Familiekalender
       </button>
 
       <div className="calendar-heading page-enter">
-        <p className="eyebrow">Hyttekalender</p>
-        <h1>Se hyttekalender</h1>
-        <p>Her ser du hvem som har registrert tid på hytta.</p>
+        <p className="eyebrow">Familiekalender</p>
+        <h1>Se kalender</h1>
+        <p>Her ser du hyttebookinger, bursdager og familiearrangementer.</p>
       </div>
 
       {loadingState === 'loading' && <CalendarLoading />}
 
       {loadingState === 'error' && (
         <div className="calendar-error" role="alert">
-          <p>Kunne ikke hente hyttekalenderen. Sjekk forbindelsen og prøv igjen.</p>
-          <button className="secondary-button" type="button" onClick={() => void loadBookings()}>
+          <p>Kunne ikke hente familiekalenderen. Sjekk forbindelsen og prøv igjen.</p>
+          <button className="secondary-button" type="button" onClick={() => void loadCalendar()}>
             Prøv igjen
           </button>
         </div>
@@ -280,6 +320,7 @@ export default function BookingCalendarPage() {
 
             {calendarDays.map((calendarDay) => {
               const dayBookings = getBookingsForDate(bookings, calendarDay.dateKey)
+              const dayEvents = getFamilyEventsForDate(familyEvents, calendarDay.dateKey)
               const dayBirthdays = getBirthdaysForDate(calendarDay.date)
               const weekday = calendarDay.date.getDay()
 
@@ -320,6 +361,28 @@ export default function BookingCalendarPage() {
                       <span className="calendar-birthday-indicator__cue" aria-hidden="true"><BirthdayIcon /></span>
                     </button>
                   )}
+                  {dayEvents.length > 0 && (
+                    <div className="calendar-day__events">
+                      {dayEvents.map((familyEvent) => {
+                        const iconName = familyEventIconNames[familyEvent.eventType]
+                        return (
+                          <button
+                            type="button"
+                            className={`calendar-family-event calendar-family-event--${familyEvent.eventType}`}
+                            key={familyEvent.id}
+                            aria-label={`Se arrangementet ${familyEvent.title}`}
+                            title={`${familyEventTypeLabels[familyEvent.eventType]}: ${familyEvent.title}`}
+                            onClick={() => openFamilyEvent(familyEvent.id)}
+                          >
+                            <span className="calendar-family-event__icon" aria-hidden="true">
+                              <DriveIcon driveIcon={eventIcons[iconName]} name={iconName} warningLabel="arrangementsikonet" />
+                            </span>
+                            <span>{familyEvent.title}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                   <div className="calendar-day__bookings">
                     {dayBookings.map((booking) => {
                       const owner = resolveBookingOwner(booking.ownerId)
@@ -357,8 +420,10 @@ export default function BookingCalendarPage() {
             })}
           </div>
 
-          {!hasBookingsInMonth(bookings, selectedMonth) && (
-            <p className="calendar-empty" role="status">Ingen registrerte tider denne måneden.</p>
+          {!hasBookingsInMonth(bookings, selectedMonth) && !calendarDays.some((day) => (
+            day.isCurrentMonth && getFamilyEventsForDate(familyEvents, day.dateKey).length > 0
+          )) && (
+            <p className="calendar-empty" role="status">Ingen registreringer denne måneden.</p>
           )}
         </section>
       )}

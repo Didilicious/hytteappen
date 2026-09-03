@@ -88,7 +88,7 @@ describe('home page Drive icons', () => {
     expect(findButton(container, 'Åpne hytte')?.querySelector('img')?.src).toContain(homeIconNames.openCabin)
     expect(findButton(container, 'Stenge hytte')?.querySelector('img')?.src).toContain(homeIconNames.closeCabin)
     expect(findButton(container, 'Drift av hytte')?.querySelector('img')?.src).toContain(homeIconNames.operations)
-    expect(findButton(container, 'Booke hyttetid')?.querySelector('img')?.src).toContain(homeIconNames.booking)
+    expect(findButton(container, 'Familiekalender')?.querySelector('img')?.src).toContain(homeIconNames.booking)
     expect(findButton(container, 'Oppslagstavle')?.querySelector('img')?.src).toContain(homeIconNames.noticeboard)
     expect(findButton(container, 'Familieoversikt')?.querySelector('img')?.src).toContain(homeIconNames.family)
     expect(findButton(container, 'Planlegge mat')?.querySelector('img')?.src).toContain(homeIconNames.food)
@@ -138,7 +138,7 @@ describe('home page Drive icons', () => {
     ['Åpne hytte', '/guide/open-cabin'],
     ['Stenge hytte', '/guide/close-cabin'],
     ['Drift av hytte', '/guide/cabin-operations'],
-    ['Booke hyttetid', '/booking'],
+    ['Familiekalender', '/booking'],
     ['Oppslagstavle', '/noticeboard'],
     ['Familieoversikt', '/familieoversikt'],
   ])('keeps %s navigation unchanged', async (label, expectedPath) => {

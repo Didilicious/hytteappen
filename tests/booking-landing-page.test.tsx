@@ -76,16 +76,16 @@ describe('booking landing page Drive icons', () => {
 
     expect(loadHomeIconsMock).toHaveBeenCalledTimes(1)
     expect(loadHomeIconsMock).toHaveBeenCalledWith(currentBookingIconNames)
-    expect(findButton(container, 'Se hyttekalender')?.querySelector('img')?.src).toContain(bookingIconNames.calendar)
-    expect(findButton(container, 'Registrer ny tid')?.querySelector('img')?.src).toContain(bookingIconNames.newBooking)
-    expect(findButton(container, 'Rediger dine tider')?.querySelector('img')?.src).toContain(bookingIconNames.editBookings)
+    expect(findButton(container, 'Se kalender')?.querySelector('img')?.src).toContain(bookingIconNames.calendar)
+    expect(findButton(container, 'Legg til i kalenderen')?.querySelector('img')?.src).toContain(bookingIconNames.newBooking)
+    expect(findButton(container, 'Rediger dine registreringer')?.querySelector('img')?.src).toContain(bookingIconNames.editBookings)
 
-    expect(findButton(container, 'Se hyttekalender')?.querySelector('img')?.src).not.toContain(bookingIconNames.newBooking)
-    expect(findButton(container, 'Se hyttekalender')?.querySelector('img')?.src).not.toContain(bookingIconNames.editBookings)
-    expect(findButton(container, 'Registrer ny tid')?.querySelector('img')?.src).not.toContain(bookingIconNames.calendar)
-    expect(findButton(container, 'Registrer ny tid')?.querySelector('img')?.src).not.toContain(bookingIconNames.editBookings)
-    expect(findButton(container, 'Rediger dine tider')?.querySelector('img')?.src).not.toContain(bookingIconNames.calendar)
-    expect(findButton(container, 'Rediger dine tider')?.querySelector('img')?.src).not.toContain(bookingIconNames.newBooking)
+    expect(findButton(container, 'Se kalender')?.querySelector('img')?.src).not.toContain(bookingIconNames.newBooking)
+    expect(findButton(container, 'Se kalender')?.querySelector('img')?.src).not.toContain(bookingIconNames.editBookings)
+    expect(findButton(container, 'Legg til i kalenderen')?.querySelector('img')?.src).not.toContain(bookingIconNames.calendar)
+    expect(findButton(container, 'Legg til i kalenderen')?.querySelector('img')?.src).not.toContain(bookingIconNames.editBookings)
+    expect(findButton(container, 'Rediger dine registreringer')?.querySelector('img')?.src).not.toContain(bookingIconNames.calendar)
+    expect(findButton(container, 'Rediger dine registreringer')?.querySelector('img')?.src).not.toContain(bookingIconNames.newBooking)
   })
 
   it('keeps all reserved icon areas empty while Drive icons are loading', async () => {
@@ -110,7 +110,7 @@ describe('booking landing page Drive icons', () => {
     })
 
     const container = await renderBookingLanding()
-    const newBookingImage = findButton(container, 'Registrer ny tid')?.querySelector('img')
+    const newBookingImage = findButton(container, 'Legg til i kalenderen')?.querySelector('img')
 
     act(() => newBookingImage?.dispatchEvent(new Event('error')))
 
@@ -120,9 +120,9 @@ describe('booking landing page Drive icons', () => {
   })
 
   it.each([
-    ['Se hyttekalender', '/booking/calendar'],
-    ['Registrer ny tid', '/booking/new'],
-    ['Rediger dine tider', '/booking/edit'],
+    ['Se kalender', '/booking/calendar'],
+    ['Legg til i kalenderen', '/booking/new'],
+    ['Rediger dine registreringer', '/booking/edit'],
   ])('keeps %s navigation unchanged', async (label, expectedPath) => {
     loadHomeIconsMock.mockResolvedValue({})
     const container = await renderBookingLanding()

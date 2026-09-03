@@ -83,7 +83,7 @@ export default function BookingDetailsPage() {
       </button>
 
       <div className="booking-details-heading page-enter">
-        <p className="eyebrow">Hyttekalender</p>
+        <p className="eyebrow">Familiekalender</p>
         <h1>Registrert hyttetid</h1>
       </div>
 

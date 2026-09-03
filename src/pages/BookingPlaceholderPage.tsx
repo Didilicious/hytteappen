@@ -11,7 +11,7 @@ export default function BookingPlaceholderPage({ title }: BookingPlaceholderPage
   return (
     <AppFrame showAccount>
       <div className="booking-placeholder page-enter">
-        <p className="eyebrow">Booke hyttetid</p>
+        <p className="eyebrow">Familiekalender</p>
         <h1>{title}</h1>
         <p className="lead">Denne siden er ikke ferdig ennå.</p>
 
