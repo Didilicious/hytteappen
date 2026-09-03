@@ -1470,17 +1470,20 @@ h1 {
 }
 
 .calendar-family-event__icon {
-  display: grid;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  place-items: center;
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
 }
 
 .calendar-family-event__icon img {
+  display: block;
   width: 100%;
   height: 100%;
+  max-width: none;
   object-fit: contain;
+  border-radius: 0;
+  opacity: 1;
 }
 
 .calendar-family-event--birthday { background: #f8dce4; border-color: #c8889b; color: #75364a; }
@@ -2421,19 +2424,20 @@ h1 {
 }
 
 .family-event-details__icon {
-  display: grid;
-  width: 72px;
-  height: 72px;
+  display: block;
+  width: 80px;
+  height: 80px;
   margin-bottom: 14px;
-  place-items: center;
-  border-radius: 18px;
-  background: #f6eee2;
 }
 
 .family-event-details__icon img {
-  width: 58px;
-  height: 58px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
   object-fit: contain;
+  border-radius: 0;
+  opacity: 1;
 }
 
 .family-event-details h1 {
@@ -4007,9 +4011,9 @@ h1 {
   }
 
   .calendar-family-event__icon {
-    width: 12px;
-    height: 12px;
-    flex-basis: 12px;
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
   }
 
   .calendar-family-event > span:last-child {
