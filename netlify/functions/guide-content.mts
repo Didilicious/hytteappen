@@ -1,13 +1,12 @@
 import type { Config } from '@netlify/functions'
 import type { GuideContentResponse } from '../../shared/guideContent.ts'
-import { normalizeGuideSheet } from './_shared/guide-sheet.mts'
+import { GuideSheetConfigurationError } from './_shared/guide-sheet.mts'
+import { readGuideContent } from './_shared/guide-content.mts'
 import {
   clearSessionCookie,
   getAuthenticatedFamilyMember,
   jsonResponse,
 } from './_shared/session.mts'
-
-const sheetUrl = 'https://docs.google.com/spreadsheets/d/1TJNToCannccplBpTpoW6mH7dn98eF8PG5b17rB1qz3c/export?format=csv'
 
 export default async function guideContent(request: Request) {
   if (request.method !== 'GET') {
@@ -25,27 +24,19 @@ export default async function guideContent(request: Request) {
     return jsonResponse({ message: 'Kunne ikke kontrollere økten.' }, { status: 500 })
   }
 
-  let csv: string
-  try {
-    const response = await fetch(sheetUrl, {
-      headers: { Accept: 'text/csv' },
-      signal: AbortSignal.timeout(8_000),
-    })
-    if (!response.ok) throw new Error('Sheet request failed')
-    csv = await response.text()
-  } catch {
-    return jsonResponse(
-      { code: 'sheet_unavailable', message: 'Kunne ikke laste guideinnholdet.' },
-      { status: 502 },
-    )
-  }
-
   try {
     const body: GuideContentResponse = {
-      content: normalizeGuideSheet(csv, (name) => Netlify.env.get(name)),
+      content: await readGuideContent(),
     }
     return jsonResponse(body)
-  } catch {
+  } catch (error) {
+    if (!(error instanceof GuideSheetConfigurationError)) {
+      return jsonResponse(
+        { code: 'sheet_unavailable', message: 'Kunne ikke laste guideinnholdet.' },
+        { status: 502 },
+      )
+    }
+
     return jsonResponse(
       { code: 'configuration_error', message: 'Guideinnholdet er feil konfigurert.' },
       { status: 500 },
