@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { Link } from 'react-router-dom'
 import type { GuideImage } from '../../shared/guideImages'
 import { useAuth } from '../auth'
 import { loadHomeIcons } from '../guideImages'
@@ -7,6 +8,12 @@ import DriveIcon, { warnAboutMissingDriveIcons } from './DriveIcon'
 type ChatMessage = {
   role: 'user' | 'assistant'
   content: string
+  sources?: ChatSource[]
+}
+
+type ChatSource = {
+  label: string
+  path: string
 }
 
 const chatbotIconName = 'icon_chatbot'
@@ -22,6 +29,17 @@ async function readErrorMessage(response: Response) {
   } catch {
     return undefined
   }
+}
+
+function readSources(value: unknown): ChatSource[] {
+  if (!Array.isArray(value)) return []
+
+  return value.filter((source): source is ChatSource => {
+    if (!source || typeof source !== 'object') return false
+    const { label, path } = source as Partial<ChatSource>
+    return typeof label === 'string' && Boolean(label.trim())
+      && typeof path === 'string' && path.startsWith('/')
+  }).slice(0, 3)
 }
 
 export default function Chatbot() {
@@ -111,14 +129,18 @@ export default function Chatbot() {
         throw new Error(await readErrorMessage(response) ?? 'Chatboten kunne ikke svare. Prøv igjen.')
       }
 
-      const body = await response.json() as { message?: unknown }
+      const body = await response.json() as { message?: unknown; sources?: unknown }
       if (typeof body.message !== 'string' || !body.message.trim()) {
         throw new Error('Chatboten kunne ikke svare. Prøv igjen.')
       }
 
       setMessages((currentMessages) => [
         ...currentMessages,
-        { role: 'assistant', content: body.message as string },
+        {
+          role: 'assistant',
+          content: body.message as string,
+          sources: readSources(body.sources),
+        },
       ])
     } catch (requestError) {
       setMessages((currentMessages) => currentMessages.slice(0, -1))
@@ -159,8 +181,20 @@ export default function Chatbot() {
 
           <div className="chatbot-messages" ref={messageAreaRef} role="log" aria-live="polite">
             {messages.map((message, index) => (
-              <div className={`chatbot-message chatbot-message--${message.role}`} key={`${message.role}-${index}`}>
-                {message.content}
+              <div className={`chatbot-message-group chatbot-message-group--${message.role}`} key={`${message.role}-${index}`}>
+                <div className={`chatbot-message chatbot-message--${message.role}`}>
+                  {message.content}
+                </div>
+                {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                  <nav className="chatbot-sources" aria-label="Kilder i Hytteappen">
+                    {message.sources.map((source) => (
+                      <Link to={source.path} onClick={() => setIsOpen(false)} key={source.path}>
+                        <span>Kilde: {source.label}</span>
+                        <span aria-hidden="true">→</span>
+                      </Link>
+                    ))}
+                  </nav>
+                )}
               </div>
             ))}
             {isSubmitting && (

@@ -2,6 +2,7 @@
 
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GuideImage } from '../shared/guideImages'
 import Chatbot from '../src/components/Chatbot'
@@ -43,7 +44,7 @@ afterEach(() => {
 
 describe('chatbot interface', () => {
   it('loads the Drive icon and opens a compact dialog', async () => {
-    await act(async () => root.render(<Chatbot />))
+    await act(async () => root.render(<MemoryRouter><Chatbot /></MemoryRouter>))
     await act(async () => undefined)
 
     const trigger = container.querySelector<HTMLButtonElement>('.chatbot-trigger')
@@ -62,7 +63,7 @@ describe('chatbot interface', () => {
     }))
     vi.stubGlobal('fetch', fetchMock)
 
-    await act(async () => root.render(<Chatbot />))
+    await act(async () => root.render(<MemoryRouter><Chatbot /></MemoryRouter>))
     act(() => container.querySelector<HTMLButtonElement>('.chatbot-trigger')?.click())
 
     const textarea = container.querySelector<HTMLTextAreaElement>('#chatbot-input')
@@ -91,5 +92,32 @@ describe('chatbot interface', () => {
     expect(container.textContent).toContain('Ta med varme klær og ved.')
     expect(container.querySelector<HTMLTextAreaElement>('#chatbot-input')?.disabled).toBe(false)
     expect(container.querySelector<HTMLButtonElement>('.chatbot-form button')?.disabled).toBe(true)
+  })
+
+  it('shows controlled links to relevant app sources', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      message: 'Anne Marie har booket hytta denne helgen.',
+      sources: [
+        { label: 'Hyttebooking: Anne Marie & Jan', path: '/booking/booking-1' },
+        { label: 'Ugyldig', path: 'https://example.com' },
+      ],
+    }), { status: 200 })))
+
+    await act(async () => root.render(<MemoryRouter><Chatbot /></MemoryRouter>))
+    act(() => container.querySelector<HTMLButtonElement>('.chatbot-trigger')?.click())
+
+    const textarea = container.querySelector<HTMLTextAreaElement>('#chatbot-input')
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')
+        ?.set?.call(textarea, 'Hvem er på hytta i helgen?')
+      textarea?.dispatchEvent(new Event('input', { bubbles: true }))
+      container.querySelector<HTMLFormElement>('.chatbot-form')
+        ?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    })
+
+    const sourceLink = container.querySelector<HTMLAnchorElement>('.chatbot-sources a')
+    expect(sourceLink?.getAttribute('href')).toBe('/booking/booking-1')
+    expect(sourceLink?.textContent).toContain('Kilde: Hyttebooking: Anne Marie & Jan')
+    expect(container.textContent).not.toContain('Ugyldig')
   })
 })
