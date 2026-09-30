@@ -20,6 +20,15 @@ function TestRoutes() {
   )
 }
 
+function CalendarRoutes() {
+  return (
+    <>
+      <ScrollToTop />
+      <Link to="/booking/calendar?month=2026-10" data-preserve-scroll>Neste måned</Link>
+    </>
+  )
+}
+
 describe('route scroll behavior', () => {
   let root: ReturnType<typeof createRoot> | undefined
 
@@ -46,6 +55,26 @@ describe('route scroll behavior', () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 0)
 
     scrollTo.mockClear()
+    await act(async () => container.querySelector<HTMLAnchorElement>('a')?.click())
+    expect(scrollTo).not.toHaveBeenCalled()
+  })
+
+  it('preserves scroll when calendar controls change the query string', async () => {
+    const scrollTo = vi.fn()
+    Object.defineProperty(window, 'scrollTo', { configurable: true, value: scrollTo })
+    const container = document.createElement('div')
+    document.body.append(container)
+    root = createRoot(container)
+
+    await act(async () => {
+      root?.render(
+        <MemoryRouter initialEntries={['/booking/calendar?month=2026-09']}>
+          <CalendarRoutes />
+        </MemoryRouter>,
+      )
+    })
+    scrollTo.mockClear()
+
     await act(async () => container.querySelector<HTMLAnchorElement>('a')?.click())
     expect(scrollTo).not.toHaveBeenCalled()
   })

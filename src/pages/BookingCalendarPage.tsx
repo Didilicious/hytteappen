@@ -53,6 +53,7 @@ function MonthButton({ direction, onClick }: { direction: 'previous' | 'next'; o
     <button
       className="calendar-icon-button"
       type="button"
+      data-preserve-scroll
       onClick={onClick}
       aria-label={isPrevious ? 'Forrige måned' : 'Neste måned'}
     >
@@ -287,6 +288,7 @@ export default function BookingCalendarPage() {
             <button
               className="calendar-today-button"
               type="button"
+              data-preserve-scroll
               disabled={isCurrentMonth}
               onClick={() => changeMonth(() => currentMonth)}
             >
