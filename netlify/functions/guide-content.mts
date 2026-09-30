@@ -31,6 +31,9 @@ export default async function guideContent(request: Request) {
     return jsonResponse(body)
   } catch (error) {
     if (!(error instanceof GuideSheetConfigurationError)) {
+      console.error('Guide content sheet request failed.', {
+        errorType: error instanceof Error ? error.name : 'UnknownError',
+      })
       return jsonResponse(
         { code: 'sheet_unavailable', message: 'Kunne ikke laste guideinnholdet.' },
         { status: 502 },
