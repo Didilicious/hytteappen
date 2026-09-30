@@ -229,6 +229,11 @@ export default function GuidePage() {
         </div>
         <div className="guide-body page-enter page-enter--delay">
           <GuideContentSections content={referencePage} imageState={imageState} />
+          <div className="instruction-actions">
+            <button className="primary-button" type="button" onClick={() => navigate(nodePath('overview'))}>
+              Ferdig
+            </button>
+          </div>
         </div>
       </GuideLayout>
     )
@@ -327,6 +332,7 @@ export default function GuidePage() {
     saveInstructionStatus(currentPage.id, status)
     if (status) {
       navigateAfter(currentPage, answers, { ...progress, [currentPage.id]: status })
+      window.scrollTo(0, 0)
     }
   }
 
