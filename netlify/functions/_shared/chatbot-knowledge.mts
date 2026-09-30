@@ -55,6 +55,7 @@ const guideIds = {
   Åpne: { id: 'open-cabin', title: 'Åpne hytte' },
   Stenge: { id: 'close-cabin', title: 'Stenge hytte' },
   Drift: { id: 'cabin-operations', title: 'Drift av hytte' },
+  Feilsøking: { id: 'troubleshooting', title: 'Feilsøking' },
 } as const
 
 const stopWords = new Set([

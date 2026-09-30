@@ -25,7 +25,7 @@ const COLUMN = {
 } as const
 
 const requiredColumns = Object.values(COLUMN)
-const validGuides = new Set<GuideName>(['Åpne', 'Stenge', 'Drift'])
+const validGuides = new Set<GuideName>(['Åpne', 'Stenge', 'Drift', 'Feilsøking'])
 const validIdPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u
 const placeholderPattern = /{{([A-Z][A-Z0-9_]*)}}/g
 
@@ -211,12 +211,15 @@ export function normalizeGuideSheet(
       warn(`Ignoring malformed "Krever svar" for guide row "${id}".`)
     }
 
+    const guides = parseGuides(values[COLUMN.guides])
+    const isTroubleshooting = guides.includes('Feilsøking')
+
     content.push({
       id: id as GuideContentId,
-      guides: parseGuides(values[COLUMN.guides]),
+      guides,
       type: parseType(values[COLUMN.type]),
-      afterId: values[COLUMN.after].trim() || null,
-      requiredStepIds: splitValues(values[COLUMN.requiredSteps]),
+      afterId: isTroubleshooting ? null : values[COLUMN.after].trim() || null,
+      requiredStepIds: isTroubleshooting ? [] : splitValues(values[COLUMN.requiredSteps]),
       answerRequirements,
       title: replacePlaceholders(values[COLUMN.title].trim(), resolveEnvironmentValue),
       location: optionalText(values[COLUMN.location], resolveEnvironmentValue),

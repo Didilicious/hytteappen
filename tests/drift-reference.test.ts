@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GuideContent } from '../shared/guideContent'
-import { getDriftPages, searchDriftPages } from '../src/driftReference'
+import { getDriftPages, getReferencePages, searchDriftPages } from '../src/driftReference'
 
 function page(id: string, overrides: Partial<GuideContent> = {}): GuideContent {
   return {
@@ -31,6 +31,16 @@ describe('Drift reference pages', () => {
     ]
 
     expect(getDriftPages(content).map(({ id }) => id)).toEqual(['first', 'last'])
+  })
+
+  it('returns Feilsøking rows as independent reference pages in Sheet order', () => {
+    const content = [
+      page('first', { guides: ['Feilsøking'], afterId: 'last', requiredStepIds: ['missing'] }),
+      page('drift'),
+      page('last', { guides: ['Feilsøking'] }),
+    ]
+
+    expect(getReferencePages(content, 'Feilsøking').map(({ id }) => id)).toEqual(['first', 'last'])
   })
 
   it('searches titles and all visible page content case-insensitively', () => {

@@ -1,5 +1,5 @@
 export type GuideContentId = string
-export type GuideName = 'Åpne' | 'Stenge' | 'Drift'
+export type GuideName = 'Åpne' | 'Stenge' | 'Drift' | 'Feilsøking'
 export type SheetNodeType = 'step' | 'question'
 
 export type AnswerRequirement = {

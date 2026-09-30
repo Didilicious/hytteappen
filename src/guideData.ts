@@ -46,4 +46,14 @@ export const guides: Record<string, GuideDefinition> = {
       overviewNodeId: 'overview',
     },
   },
+  troubleshooting: {
+    id: 'troubleshooting',
+    name: 'Feilsøking',
+    title: 'Feilsøking',
+    section: {
+      label: 'FEILSØKING',
+      icon: 'cabin-open',
+      overviewNodeId: 'overview',
+    },
+  },
 }
