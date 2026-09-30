@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth'
 import Chatbot from './components/Chatbot'
+import ScrollToTop from './components/ScrollToTop'
 import BookingCalendarPage from './pages/BookingCalendarPage'
 import BookingDetailsPage from './pages/BookingDetailsPage'
 import BookingLandingPage from './pages/BookingLandingPage'
@@ -42,6 +43,7 @@ export default function App() {
 
   return (
     <>
+      <ScrollToTop />
       <Routes>
         <Route
           path="/login"

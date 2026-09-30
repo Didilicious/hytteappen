@@ -54,6 +54,21 @@ const driftPage: GuideContent = {
   imageGroup: null,
 }
 
+const openPages: GuideContent[] = [
+  {
+    ...driftPage,
+    id: 'first-step',
+    guides: ['Åpne'],
+    title: 'Første steg',
+  },
+  {
+    ...driftPage,
+    id: 'second-step',
+    guides: ['Åpne'],
+    title: 'Andre steg',
+  },
+]
+
 describe('Drift reference page navigation', () => {
   let root: ReturnType<typeof createRoot> | undefined
 
@@ -91,5 +106,54 @@ describe('Drift reference page navigation', () => {
 
     expect(scrollTo).toHaveBeenCalledWith(0, 0)
     expect(container.querySelector('h1')?.textContent).toBe('Nødstrøm')
+  })
+
+  it.each(['Ferdig', 'Hopp over for nå'])('scrolls to the top after %s advances an Åpne step', async (action) => {
+    loadGuideContentMock.mockResolvedValue(openPages)
+    const scrollTo = vi.fn()
+    Object.defineProperty(window, 'scrollTo', { configurable: true, value: scrollTo })
+    const container = document.createElement('div')
+    document.body.append(container)
+    root = createRoot(container)
+
+    await act(async () => {
+      root?.render(
+        <MemoryRouter initialEntries={['/guide/open-cabin/first-step']}>
+          <Routes>
+            <Route path="/guide/:guideId/:nodeId?" element={<GuidePage />} />
+          </Routes>
+        </MemoryRouter>,
+      )
+    })
+
+    const actionButton = [...container.querySelectorAll('button')]
+      .find((button) => button.textContent === action)
+    await act(async () => actionButton?.click())
+
+    expect(scrollTo).toHaveBeenCalledWith(0, 0)
+    expect(container.querySelector('h1')?.textContent).toBe('Andre steg')
+  })
+
+  it('returns to the Drift list from the bottom Ferdig button', async () => {
+    loadGuideContentMock.mockResolvedValue([driftPage])
+    const container = document.createElement('div')
+    document.body.append(container)
+    root = createRoot(container)
+
+    await act(async () => {
+      root?.render(
+        <MemoryRouter initialEntries={['/guide/cabin-operations/Nødstrøm']}>
+          <Routes>
+            <Route path="/guide/:guideId/:nodeId?" element={<GuidePage />} />
+          </Routes>
+        </MemoryRouter>,
+      )
+    })
+
+    const doneButton = [...container.querySelectorAll('button')]
+      .find((button) => button.textContent?.trim() === 'Ferdig')
+    await act(async () => doneButton?.click())
+
+    expect(container.querySelector('h1')?.textContent).toBe('Drift av hytte')
   })
 })
