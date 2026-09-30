@@ -5,8 +5,12 @@ export type DriftSearchResult = {
   snippet: string | null
 }
 
+export function getReferencePages(content: readonly GuideContent[], guideName: 'Drift' | 'Feilsøking') {
+  return content.filter((page) => page.guides.includes(guideName))
+}
+
 export function getDriftPages(content: readonly GuideContent[]) {
-  return content.filter((page) => page.guides.includes('Drift'))
+  return getReferencePages(content, 'Drift')
 }
 
 function getPageContent(page: GuideContent) {
@@ -49,4 +53,3 @@ export function searchDriftPages(pages: readonly GuideContent[], rawQuery: strin
     return titleMatches || snippet ? [{ page, snippet }] : []
   })
 }
-

@@ -110,6 +110,20 @@ describe('normalizeGuideSheet', () => {
     expect(content.guides).toEqual(['Åpne', 'Stenge', 'Drift'])
   })
 
+  it('accepts Feilsøking and ignores ordered-guide dependencies', () => {
+    const content = normalize([publishedRow({
+      Guide: 'Feilsøking',
+      Etter: 'annet-steg',
+      'Krever steg': 'ferdig-steg',
+    })])[0]
+
+    expect(content).toMatchObject({
+      guides: ['Feilsøking'],
+      afterId: null,
+      requiredStepIds: [],
+    })
+  })
+
   it('parses multiple Krever svar expressions', () => {
     expect(parseAnswerRequirements('Årstid-2026="Vinter", modus="Rolig"')).toEqual([
       { questionId: 'Årstid-2026', answer: 'Vinter' },

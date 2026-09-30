@@ -98,6 +98,22 @@ export default function HomePage() {
           <span className="task-button__arrow" aria-hidden="true">→</span>
         </button>
 
+        <button
+          className="task-button"
+          type="button"
+          onClick={() => navigate('/guide/troubleshooting')}
+        >
+          <span className="task-button__icon" aria-hidden="true">
+            <DriveIcon
+              driveIcon={iconsByName[homeIconNames.troubleshooting]}
+              name={homeIconNames.troubleshooting}
+              warningLabel="hjem-ikonet"
+            />
+          </span>
+          <span className="task-button__label">Feilsøking</span>
+          <span className="task-button__arrow" aria-hidden="true">→</span>
+        </button>
+
         <button className="task-button" type="button" onClick={() => navigate('/booking')}>
           <span className="task-button__icon" aria-hidden="true">
             <DriveIcon

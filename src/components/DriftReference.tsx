@@ -23,32 +23,48 @@ function HighlightedText({ query, text }: { query: string; text: string }) {
   return <>{parts}</>
 }
 
-export default function DriftReference({ pages }: { pages: readonly GuideContent[] }) {
+type ReferenceConfig = {
+  guideId: string
+  title: string
+  description: string
+  searchLabel: string
+  searchPlaceholder: string
+  emptyLabel: string
+}
+
+export default function DriftReference({ pages, config = {
+  guideId: 'cabin-operations',
+  title: 'Drift av hytte',
+  description: 'Finn rutiner og praktisk informasjon om hytta.',
+  searchLabel: 'Søk i driftshåndboken',
+  searchPlaceholder: 'Søk etter for eksempel vann, ved eller sikring',
+  emptyLabel: 'Drift',
+} }: { pages: readonly GuideContent[]; config?: ReferenceConfig }) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const inputId = useId()
   const resultsId = useId()
   const results = useMemo(() => searchDriftPages(pages, query), [pages, query])
   const hasQuery = Boolean(query.trim())
-  const openPage = (pageId: string) => navigate(`/guide/cabin-operations/${pageId}`)
+  const openPage = (pageId: string) => navigate(`/guide/${config.guideId}/${pageId}`)
 
   return (
     <>
       <div className="overview-heading page-enter">
         <p className="eyebrow">Oppslagsverk</p>
-        <h1>Drift av hytte</h1>
-        <p className="lead">Finn rutiner og praktisk informasjon om hytta.</p>
+        <h1>{config.title}</h1>
+        <p className="lead">{config.description}</p>
       </div>
 
       <div className="reference-search page-enter page-enter--delay">
-        <label htmlFor={inputId}>Søk i driftshåndboken</label>
+        <label htmlFor={inputId}>{config.searchLabel}</label>
         <div className="reference-search__field">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16 16 5 5" /></svg>
           <input
             id={inputId}
             type="search"
             value={query}
-            placeholder="Søk etter for eksempel vann, ved eller sikring"
+            placeholder={config.searchPlaceholder}
             autoComplete="off"
             aria-controls={hasQuery ? resultsId : undefined}
             aria-expanded={hasQuery}
@@ -85,10 +101,9 @@ export default function DriftReference({ pages }: { pages: readonly GuideContent
         </ul>
       ) : (
         <div className="guide-content-error page-enter page-enter--delay">
-          <p>Ingen publiserte sider er tilgjengelige for Drift ennå.</p>
+          <p>Ingen publiserte sider er tilgjengelige for {config.emptyLabel} ennå.</p>
         </div>
       )}
     </>
   )
 }
-

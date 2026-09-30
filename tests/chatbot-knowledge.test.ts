@@ -41,6 +41,33 @@ describe('Hytteappen knowledge retrieval', () => {
     expect(matches[0].context).toContain('Åpne hovedkranen langsomt')
   })
 
+  it('indexes published Feilsøking content with its reference-page route', () => {
+    const matches = rankAppKnowledge('Hva gjør jeg når pumpen stopper?', {
+      ...emptyData,
+      guides: [{
+        id: 'pump-stopped',
+        guides: ['Feilsøking'],
+        type: 'step',
+        afterId: null,
+        requiredStepIds: [],
+        answerRequirements: [],
+        title: 'Vannpumpen har stoppet',
+        location: 'Teknisk rom',
+        warning: null,
+        instructions: ['Kontroller sikringen til pumpen.'],
+        checkpoints: null,
+        answerOptions: [],
+        canSkip: true,
+        imageGroup: null,
+      }],
+    }, new Date('2026-09-03T12:00:00Z'))
+
+    expect(matches[0].source).toEqual({
+      label: 'Feilsøking: Vannpumpen har stoppet',
+      path: '/guide/troubleshooting/pump-stopped',
+    })
+  })
+
   it('answers booking availability from the absence of overlapping bookings', () => {
     const matches = rankAppKnowledge(
       'Er hytta ledig i helgen?',
