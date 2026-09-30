@@ -26,7 +26,7 @@ const COLUMN = {
 
 const requiredColumns = Object.values(COLUMN)
 const validGuides = new Set<GuideName>(['Åpne', 'Stenge', 'Drift'])
-const validIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const validIdPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u
 const placeholderPattern = /{{([A-Z][A-Z0-9_]*)}}/g
 
 export class GuideSheetConfigurationError extends Error {}
@@ -114,7 +114,7 @@ export function parseAnswerRequirements(value: string): AnswerRequirement[] {
   if (!value.trim()) return []
 
   return splitRequirements(value).map((expression) => {
-    const match = expression.match(/^([a-z0-9]+(?:-[a-z0-9]+)*)\s*=\s*"([^"]+)"$/)
+    const match = expression.match(/^([\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*)\s*=\s*"([^"]+)"$/u)
     if (!match) {
       throw new GuideSheetConfigurationError('Malformed answer requirement.')
     }

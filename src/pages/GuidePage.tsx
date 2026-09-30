@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import type { GuideContent } from '../../shared/guideContent'
 import GuideContentSections from '../components/GuideContentSections'
+import DriftReference from '../components/DriftReference'
 import GuideLayout from '../components/GuideLayout'
+import { getDriftPages } from '../driftReference'
 import { guides } from '../guideData'
 import { loadGuideContent, type GuideContentLoadState } from '../guideContent'
 import {
@@ -190,6 +192,11 @@ export default function GuidePage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (guideId !== 'cabin-operations' || !nodeId || nodeId === 'overview') return
+    window.scrollTo(0, 0)
+  }, [guideId, nodeId])
+
   if (!guide) return <Navigate to="/" replace />
 
   if (contentState.status === 'loading') {
@@ -201,9 +208,34 @@ export default function GuidePage() {
   }
 
   const { content } = contentState
+  const isDriftReference = guide.name === 'Drift'
+  const driftPages = isDriftReference ? getDriftPages(content) : []
+  const nodePath = (targetNodeId: string) => `/guide/${guide.id}/${targetNodeId}`
+
+  if (isDriftReference) {
+    if (!nodeId || nodeId === 'overview') {
+      return <GuideLayout guide={guide}><DriftReference pages={driftPages} /></GuideLayout>
+    }
+
+    const referencePage = driftPages.find((candidate) => candidate.id === nodeId)
+    if (!referencePage) return <Navigate to={nodePath('overview')} replace />
+
+    return (
+      <GuideLayout guide={guide}>
+        <GuideBackButton onClick={() => navigate(nodePath('overview'))} />
+        <div className="guide-heading page-enter">
+          <p className="eyebrow">Drift av hytte</p>
+          <h1>{referencePage.title}</h1>
+        </div>
+        <div className="guide-body page-enter page-enter--delay">
+          <GuideContentSections content={referencePage} imageState={imageState} />
+        </div>
+      </GuideLayout>
+    )
+  }
+
   const orderedPages = orderGuidePages(guide, content)
   const visiblePages = buildVisiblePages(guide, content, answers, progress)
-  const nodePath = (targetNodeId: string) => `/guide/${guide.id}/${targetNodeId}`
 
   if (!nodeId) {
     return <Navigate to={visiblePages[0] ? nodePath(visiblePages[0].id) : nodePath('overview')} replace />

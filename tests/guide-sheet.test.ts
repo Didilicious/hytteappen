@@ -66,6 +66,17 @@ describe('normalizeGuideSheet', () => {
     expect(result[1]).toMatchObject({ type: 'question', title: 'Nytt spørsmål' })
   })
 
+  it('accepts uppercase, lowercase, Unicode letters, and numeric IDs without changing them', () => {
+    const result = normalize([
+      publishedRow({ ID: 'Drift-01' }),
+      publishedRow({ ID: 'drift-02' }),
+      publishedRow({ ID: 'Åpne-03' }),
+      publishedRow({ ID: '2026' }),
+    ])
+
+    expect(result.map((item) => item.id)).toEqual(['Drift-01', 'drift-02', 'Åpne-03', '2026'])
+  })
+
   it('uses only Publisert JA rows', () => {
     const result = normalize([
       publishedRow({ Publisert: 'NEI', 'Tittel / Spørsmål': 'Gammel tekst' }),
@@ -100,8 +111,8 @@ describe('normalizeGuideSheet', () => {
   })
 
   it('parses multiple Krever svar expressions', () => {
-    expect(parseAnswerRequirements('aarstid="Vinter", modus="Rolig"')).toEqual([
-      { questionId: 'aarstid', answer: 'Vinter' },
+    expect(parseAnswerRequirements('Årstid-2026="Vinter", modus="Rolig"')).toEqual([
+      { questionId: 'Årstid-2026', answer: 'Vinter' },
       { questionId: 'modus', answer: 'Rolig' },
     ])
   })
