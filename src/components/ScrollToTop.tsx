@@ -5,7 +5,8 @@ function isBackAction(target: EventTarget | null) {
   if (!(target instanceof Element)) return false
   const control = target.closest('a, button')
   if (!control) return false
-  return control.classList.contains('back-button')
+  return control.hasAttribute('data-preserve-scroll')
+    || control.classList.contains('back-button')
     || control.textContent?.trim().startsWith('Tilbake') === true
 }
 
