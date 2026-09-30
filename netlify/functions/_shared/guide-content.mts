@@ -1,7 +1,7 @@
 import type { GuideContent } from '../../../shared/guideContent.ts'
 import { normalizeGuideSheet } from './guide-sheet.mts'
 
-export const guideSheetUrl = 'https://docs.google.com/spreadsheets/d/1TJNToCannccplBpTpoW6mH7dn98eF8PG5b17rB1qz3c/export?format=csv'
+export const guideSheetUrl = 'https://docs.google.com/spreadsheets/d/1TJNToCannccplBpTpoW6mH7dn98eF8PG5b17rB1qz3c/export?format=csv&gid=951480919'
 const sheetRequestTimeoutMs = 12_000
 const sheetRequestAttempts = 2
 
