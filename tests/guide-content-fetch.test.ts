@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { readGuideContent } from '../netlify/functions/_shared/guide-content.mts'
+import { guideSheetUrl, readGuideContent } from '../netlify/functions/_shared/guide-content.mts'
 
 const headers = [
   'ID',
@@ -25,6 +25,10 @@ const validCsv = [
 ].join('\n')
 
 describe('Google Sheet guide content fetch', () => {
+  it('requests the worksheet containing the guide data explicitly', () => {
+    expect(new URL(guideSheetUrl).searchParams.get('gid')).toBe('951480919')
+  })
+
   it('retries a transient network failure and returns normalized content', async () => {
     const fetchSheet = vi.fn<typeof fetch>()
       .mockRejectedValueOnce(new DOMException('Timed out', 'TimeoutError'))
