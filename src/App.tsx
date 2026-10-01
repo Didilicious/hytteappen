@@ -10,6 +10,7 @@ import EditBookingPage from './pages/EditBookingPage'
 import EditBookingsPage from './pages/EditBookingsPage'
 import EditFamilyEventPage from './pages/EditFamilyEventPage'
 import FamilyEventDetailsPage from './pages/FamilyEventDetailsPage'
+import FamilyEventRsvpPage from './pages/FamilyEventRsvpPage'
 import FamilyOverviewPage from './pages/FamilyOverviewPage'
 import FamilyProfilePage from './pages/FamilyProfilePage'
 import GuidePage from './pages/GuidePage'
@@ -157,6 +158,7 @@ export default function App() {
         />
         <Route path="/booking/edit/event/:eventId" element={<ProtectedRoute><EditFamilyEventPage /></ProtectedRoute>} />
         <Route path="/booking/event/:eventId" element={<ProtectedRoute><FamilyEventDetailsPage /></ProtectedRoute>} />
+        <Route path="/booking/event/:eventId/svar" element={<ProtectedRoute><FamilyEventRsvpPage /></ProtectedRoute>} />
         <Route
           path="/booking/:bookingId"
           element={

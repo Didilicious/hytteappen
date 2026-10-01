@@ -38,6 +38,20 @@ npm run build
 - `netlify/functions` validates family accounts and manages the signed HttpOnly session cookie.
 - `netlify.toml` defines the production build and SPA route fallback.
 
+## Family event responses
+
+Families can respond to another family's event from its details page at `/booking/event/:eventId`.
+The dedicated `/booking/event/:eventId/svar` page starts with no attendees selected, supports
+registered family members and multiple named guests, and allows an explicit nobody-attending response.
+Saved responses load when editing. The event owner cannot submit a response to their own event.
+Cabin bookings do not use this feature.
+
+The `family-event-rsvp` Netlify Function uses the existing authenticated session cookie and derives
+the responding family from that session, never from client-provided ownership fields. Responses are
+stored in Netlify Database with a unique event/family key, member IDs, nonempty guest names, and
+creation/update timestamps. Updating a response preserves its original creation timestamp.
+The new table is defined in `db/schema.ts` and its migration is applied automatically on deployment.
+
 ## Deployment
 
 Netlify runs `npm run build`, publishes `dist`, and rewrites application routes to `index.html` so refreshed guide URLs continue to work.
