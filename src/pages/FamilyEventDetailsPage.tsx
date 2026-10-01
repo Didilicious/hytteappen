@@ -31,6 +31,7 @@ export default function FamilyEventDetailsPage() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [invitation, setInvitation] = useState<{ id: string; ownerId: string } | null>(null)
   const [hasRsvp, setHasRsvp] = useState(false)
   const [rsvpState, setRsvpState] = useState<'loading' | 'ready' | 'error'>('loading')
 
@@ -62,16 +63,17 @@ export default function FamilyEventDetailsPage() {
     if (!eventId) return setLoadingState('not-found')
     setLoadingState('loading')
     try {
-      const response = await fetch(`/.netlify/functions/read-family-event?id=${encodeURIComponent(eventId)}`, {
+      const response = await fetch(`/.netlify/functions/read-family-event?id=${encodeURIComponent(eventId)}&includeInvitation=true`, {
         credentials: 'include', headers: { Accept: 'application/json' }, cache: 'no-store',
       })
       if (response.status === 401) return expireSession()
       if (response.status === 404) return setLoadingState('not-found')
       if (!response.ok) throw new Error('Failed to load event')
-      const body = await response.json() as { event?: unknown; attendance?: Attendance }
+      const body = await response.json() as { event?: unknown; attendance?: Attendance; invitation?: { id: string; ownerId: string } | null }
       const nextEvent = normalizeFamilyEvent(body.event)
       if (!nextEvent) throw new Error('Invalid event')
       setFamilyEvent(nextEvent)
+      setInvitation(body.invitation ?? null)
       setAttendance(body.attendance ?? null)
       setLoadingState('ready')
       const iconName = familyEventIconNames[nextEvent.eventType]
@@ -88,12 +90,12 @@ export default function FamilyEventDetailsPage() {
 
   const returnPath = (location.state as { calendarPath?: string } | null)?.calendarPath ?? '/booking/calendar'
 
-  async function confirmDelete() {
+  async function confirmDelete(deleteLinkedPost = false) {
     if (!familyEvent || familyEvent.ownerId !== currentUser?.id || isDeleting) return
     setIsDeleting(true)
     setDeleteError('')
     try {
-      const response = await fetch(`/.netlify/functions/delete-family-event?id=${encodeURIComponent(familyEvent.id)}`, {
+      const response = await fetch(`/.netlify/functions/delete-family-event?id=${encodeURIComponent(familyEvent.id)}${deleteLinkedPost ? '&deleteLinkedPost=true' : ''}`, {
         method: 'DELETE', credentials: 'include', headers: { Accept: 'application/json' },
       })
       if (response.status === 401) return expireSession()
@@ -167,12 +169,14 @@ export default function FamilyEventDetailsPage() {
           if (event.target === event.currentTarget && !isDeleting) setShowDeleteConfirmation(false)
         }}>
           <section className="booking-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-description">
-            <h2 id="delete-title">Er du sikker på at du vil slette dette arrangementet?</h2>
+            <h2 id="delete-title">{invitation ? 'Vil du også slette invitasjonen fra Oppslagstavla?' : 'Er du sikker på at du vil slette dette arrangementet?'}</h2>
             <p id="delete-description">{familyEvent.title}</p>
+            {invitation && invitation.ownerId !== currentUser?.id && <p>Du kan bare slette dine egne innlegg. Arrangementet kan slettes uten å slette invitasjonen.</p>}
             {deleteError && <p className="error-message" role="alert">{deleteError}</p>}
-            <div className="booking-delete-dialog__actions">
+            <div className={`booking-delete-dialog__actions${invitation ? ' booking-delete-dialog__actions--linked' : ''}`}>
               <button className="secondary-button" type="button" onClick={() => setShowDeleteConfirmation(false)} disabled={isDeleting}>Avbryt</button>
-              <button className="danger-button" type="button" onClick={() => void confirmDelete()} disabled={isDeleting}>{isDeleting ? 'Sletter …' : 'Slett'}</button>
+              <button className="danger-button" type="button" onClick={() => void confirmDelete()} disabled={isDeleting}>{isDeleting ? 'Sletter …' : invitation ? 'Slett bare arrangementet' : 'Slett'}</button>
+              {invitation && <button className="danger-button" type="button" onClick={() => void confirmDelete(true)} disabled={isDeleting || invitation.ownerId !== currentUser?.id}>Slett begge</button>}
             </div>
           </section>
         </div>

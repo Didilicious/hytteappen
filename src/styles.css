@@ -2655,6 +2655,10 @@ h1 {
   margin-bottom: 18px;
 }
 
+.booking-delete-dialog .booking-delete-dialog__actions--linked {
+  grid-template-columns: 1fr;
+}
+
 .lead {
   max-width: 460px;
   margin: 24px 0 0;

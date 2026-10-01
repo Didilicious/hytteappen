@@ -1,18 +1,25 @@
 import type { Config } from '@netlify/functions'
 import { isValidNoticeboardPostId } from './_shared/noticeboard-id.mts'
-import { deleteNoticeboardPost, readNoticeboardPost } from './_shared/noticeboard-posts.mts'
+import { deleteNoticeboardPost, readNoticeboardPost, unlinkFamilyEventInvitation } from './_shared/noticeboard-posts.mts'
+import { deleteFamilyEvent, readFamilyEvent } from './_shared/family-events.mts'
 import { clearSessionCookie, getAuthenticatedFamilyMember, jsonResponse } from './_shared/session.mts'
 
 type Dependencies = {
   authenticate: typeof getAuthenticatedFamilyMember
   loadPost: typeof readNoticeboardPost
   removePost: typeof deleteNoticeboardPost
+  loadEvent: typeof readFamilyEvent
+  removeEvent: typeof deleteFamilyEvent
+  unlinkInvitation: typeof unlinkFamilyEventInvitation
 }
 
 export function createDeleteNoticeboardPostFunction({
   authenticate = getAuthenticatedFamilyMember,
   loadPost = readNoticeboardPost,
   removePost = deleteNoticeboardPost,
+  loadEvent = readFamilyEvent,
+  removeEvent = deleteFamilyEvent,
+  unlinkInvitation = unlinkFamilyEventInvitation,
 }: Partial<Dependencies> = {}) {
   return async function deletePost(request: Request) {
     if (request.method !== 'DELETE') return jsonResponse({ message: 'Metoden er ikke tillatt.' }, { status: 405 })
@@ -26,6 +33,14 @@ export function createDeleteNoticeboardPostFunction({
       const post = await loadPost(postId)
       if (!post) return jsonResponse({ message: 'Innlegget finnes ikke.' }, { status: 404 })
       if (post.ownerId !== family.id) return jsonResponse({ message: 'Du kan bare slette dine egne innlegg.' }, { status: 403 })
+      if (post.eventId && new URL(request.url).searchParams.get('deleteLinkedEvent') === 'true') {
+        const event = await loadEvent(post.eventId)
+        if (event) {
+          if (event.ownerId !== family.id) return jsonResponse({ message: 'Du kan bare slette dine egne arrangementer.' }, { status: 403 })
+          await unlinkInvitation(event.id)
+          await removeEvent(event.id)
+        }
+      }
       if (!await removePost(postId, family.id)) return jsonResponse({ message: 'Innlegget kunne ikke slettes.' }, { status: 409 })
       return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } })
     } catch {

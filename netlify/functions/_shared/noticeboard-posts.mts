@@ -58,6 +58,17 @@ export async function readNoticeboardPost(id: string) {
   return post as NoticeboardPost | undefined
 }
 
+export async function readFamilyEventInvitation(eventId: string) {
+  const [post] = await getDb().select().from(noticeboardPosts)
+    .where(eq(noticeboardPosts.eventId, eventId)).limit(1)
+  return post as NoticeboardPost | undefined
+}
+
+export async function unlinkFamilyEventInvitation(eventId: string) {
+  await getDb().update(noticeboardPosts).set({ eventId: null })
+    .where(eq(noticeboardPosts.eventId, eventId))
+}
+
 export async function updateNoticeboardPost(id: string, ownerId: string, content: Pick<NoticeboardPost, 'title' | 'description'>, updatedAt: string) {
   const [post] = await getDb().update(noticeboardPosts)
     .set({ title: content.title, description: content.description, updatedAt })

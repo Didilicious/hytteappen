@@ -120,6 +120,8 @@ describe('family event ownership', () => {
       authenticate: () => authenticatedUser,
       loadEvent: vi.fn().mockResolvedValue(familyEvent),
       removeEvent,
+      loadInvitation: vi.fn().mockResolvedValue(undefined),
+      unlinkInvitation: vi.fn(),
     })
     expect((await ownerHandler(deleteRequest)).status).toBe(204)
     expect(removeEvent).toHaveBeenCalledWith(eventId)

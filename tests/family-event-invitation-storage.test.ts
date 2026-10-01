@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { noticeboardPosts } from '../db/schema'
-import { createFamilyEventInvitation, deleteNoticeboardPost, updateNoticeboardPost } from '../netlify/functions/_shared/noticeboard-posts.mts'
+import { createFamilyEventInvitation, deleteNoticeboardPost, readFamilyEventInvitation, unlinkFamilyEventInvitation, updateNoticeboardPost } from '../netlify/functions/_shared/noticeboard-posts.mts'
 import { and, eq } from 'drizzle-orm'
 import type { FamilyEvent } from '../shared/familyEvents'
 
@@ -73,5 +73,24 @@ describe('persistent invitation posts', () => {
     expect(database.delete).toHaveBeenCalledWith(noticeboardPosts)
     expect(where).toHaveBeenCalledWith(and(eq(noticeboardPosts.id, 'post'), eq(noticeboardPosts.ownerId, 'mads')))
     expect(await deleteNoticeboardPost('post', 'anette')).toBe(false)
+  })
+
+  it('finds invitations by event ID regardless of their open or solved status', async () => {
+    const post = { id: 'post', eventId: event.id, status: 'solved' }
+    const limit = vi.fn().mockResolvedValue([post])
+    const where = vi.fn().mockReturnValue({ limit })
+    database.select.mockReturnValue({ from: vi.fn().mockReturnValue({ where }) })
+    expect(await readFamilyEventInvitation(event.id)).toEqual(post)
+    expect(where).toHaveBeenCalledWith(eq(noticeboardPosts.eventId, event.id))
+  })
+
+  it('clears only the event link while preserving post content, status, and ownership', async () => {
+    const where = vi.fn().mockResolvedValue(undefined)
+    const set = vi.fn().mockReturnValue({ where })
+    database.update.mockReturnValue({ set })
+    await unlinkFamilyEventInvitation(event.id)
+    expect(set).toHaveBeenCalledWith({ eventId: null })
+    expect(where).toHaveBeenCalledWith(eq(noticeboardPosts.eventId, event.id))
+    expect(database.delete).not.toHaveBeenCalled()
   })
 })
