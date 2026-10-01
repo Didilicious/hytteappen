@@ -3,6 +3,10 @@ import { getDb } from '../../../db/index.ts'
 import { familyEventRsvps } from '../../../db/schema.ts'
 import type { FamilyEventRsvp, FamilyEventRsvpInput } from '../../../shared/familyEventRsvps.ts'
 
+export async function readFamilyEventRsvps(eventId: string): Promise<FamilyEventRsvp[]> {
+  return getDb().select().from(familyEventRsvps).where(eq(familyEventRsvps.eventId, eventId))
+}
+
 export async function readFamilyEventRsvp(eventId: string, familyId: string): Promise<FamilyEventRsvp | null> {
   const [rsvp] = await getDb().select().from(familyEventRsvps)
     .where(and(eq(familyEventRsvps.eventId, eventId), eq(familyEventRsvps.familyId, familyId))).limit(1)

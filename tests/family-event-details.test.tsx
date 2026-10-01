@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import BookingCalendarPage from '../src/pages/BookingCalendarPage'
 import FamilyEventDetailsPage from '../src/pages/FamilyEventDetailsPage'
+import EditFamilyEventPage from '../src/pages/EditFamilyEventPage'
 
 const mockedAuth = vi.hoisted(() => ({
   currentUser: { id: 'anette', displayName: 'Anette' },
@@ -52,7 +53,7 @@ describe('family event details deletion', () => {
     vi.clearAllMocks()
   })
 
-  async function renderDetails({ ownerId = 'anette', deleteStatus = 204, fromCalendar = false } = {}) {
+  async function renderDetails({ ownerId = 'anette', deleteStatus = 204, fromCalendar = false, fromRegistrations = false } = {}) {
     let deleted = false
     const fetchMock = vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
       const url = String(input)
@@ -72,13 +73,15 @@ describe('family event details deletion', () => {
     root = createRoot(container)
     await act(async () => {
       root?.render(
-        <MemoryRouter initialEntries={[fromCalendar ? '/booking/calendar?month=2026-09' : {
+        <MemoryRouter initialEntries={[fromRegistrations ? `/booking/edit/event/${familyEvent.id}` : fromCalendar ? '/booking/calendar?month=2026-09' : {
           pathname: `/booking/event/${familyEvent.id}`,
           state: { calendarPath: '/booking/calendar?month=2026-09' },
         }]}>
           <LocationDisplay />
           <Routes>
             <Route path="/booking/event/:eventId" element={<FamilyEventDetailsPage />} />
+            <Route path="/booking/edit/event/:eventId" element={<EditFamilyEventPage />} />
+            <Route path="/booking/edit" element={<h1>Rediger dine registreringer</h1>} />
             <Route path="/booking/calendar" element={<BookingCalendarPage />} />
           </Routes>
         </MemoryRouter>,
@@ -97,6 +100,24 @@ describe('family event details deletion', () => {
     const { container } = await renderDetails()
     const actions = container.querySelector('.booking-edit-card__actions')
     expect(actions?.textContent).toBe('Rediger arrangementetSlett')
+  })
+
+  it.each(['Avbryt', 'Lagre endringer'])('returns to the previously viewed calendar month after %s', async (action) => {
+    const { container, fetchMock } = await renderDetails({ fromCalendar: true })
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Se arrangementet Søndagsmiddag"]')!.click())
+    await act(async () => button(container, 'Rediger arrangementet').click())
+    expect(container.querySelector('output')?.textContent).toBe(`/booking/edit/event/${familyEvent.id}`)
+    await act(async () => button(container, action).click())
+    expect(container.querySelector('output')?.textContent).toBe('/booking/calendar?month=2026-09')
+    expect(container.querySelector('.calendar-grid')).not.toBeNull()
+    expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'PATCH')).toBe(action === 'Lagre endringer')
+  })
+
+  it.each(['Avbryt', 'Lagre endringer'])('returns to registrations after %s when editing from registrations', async (action) => {
+    const { container } = await renderDetails({ fromRegistrations: true })
+    await act(async () => button(container, action).click())
+    expect(container.querySelector('output')?.textContent).toBe('/booking/edit')
+    expect(container.querySelector('h1')?.textContent).toBe('Rediger dine registreringer')
   })
 
   it('hides both owner actions for another family', async () => {

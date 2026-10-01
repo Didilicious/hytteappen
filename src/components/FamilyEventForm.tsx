@@ -7,6 +7,7 @@ import AppFrame from './AppFrame'
 import { DatePickerField, TimePickerField } from './DateTimePickerFields'
 
 export type FamilyEventFormValues = {
+  organizerMemberIds?: string[]
   eventType: FamilyEventType | ''
   title: string
   startDate: string
@@ -30,6 +31,7 @@ type Props = {
 }
 
 const emptyValues: FamilyEventFormValues = {
+  organizerMemberIds: [],
   eventType: '',
   title: '',
   startDate: '',
@@ -137,6 +139,7 @@ export default function FamilyEventForm({
     try {
       const errorMessage = await onSubmit({
         ...values,
+        organizerMemberIds: values.organizerMemberIds ?? [],
         title: values.title.trim(),
         endDate: showEndDate ? values.endDate : null,
         endTime: showEndTime ? values.endTime : '',
@@ -256,6 +259,19 @@ export default function FamilyEventForm({
             onChange={(event) => setValue('moreInfo', event.target.value)}
           />
         </div>
+
+        <fieldset className="family-event-rsvp__attendees" disabled={isSaving}>
+          <legend>Hvem fra din familie kommer?</legend>
+          <div className="booking-checkboxes">
+            {getFamily(ownerId)?.members.map((member) => <label className="checkbox-field" key={member.id}>
+              <input type="checkbox" checked={values.organizerMemberIds?.includes(member.id) ?? false} onChange={(event) => {
+                const selected = values.organizerMemberIds ?? []
+                setValue('organizerMemberIds', event.target.checked ? [...selected, member.id] : selected.filter((memberId) => memberId !== member.id))
+              }} />
+              <span>{member.displayName}</span>
+            </label>)}
+          </div>
+        </fieldset>
 
         <div className="booking-form__feedback" aria-live="polite">
           {saveError && <p className="error-message" role="alert">{saveError}</p>}
