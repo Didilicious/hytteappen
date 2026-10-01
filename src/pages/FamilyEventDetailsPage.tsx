@@ -28,6 +28,32 @@ export default function FamilyEventDetailsPage() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [hasRsvp, setHasRsvp] = useState(false)
+  const [rsvpState, setRsvpState] = useState<'loading' | 'ready' | 'error'>('loading')
+
+  const loadRsvp = useCallback(async (signal?: AbortSignal) => {
+    if (!familyEvent || !currentUser || familyEvent.ownerId === currentUser.id) return
+    setRsvpState('loading')
+    try {
+      const response = await fetch(`/.netlify/functions/family-event-rsvp?id=${encodeURIComponent(familyEvent.id)}`, {
+        credentials: 'include', headers: { Accept: 'application/json' }, cache: 'no-store', signal,
+      })
+      if (response.status === 401) return expireSession()
+      if (!response.ok) throw new Error('Failed to load RSVP')
+      const body = await response.json() as { rsvp?: unknown }
+      if (signal?.aborted) return
+      setHasRsvp(Boolean(body.rsvp))
+      setRsvpState('ready')
+    } catch {
+      if (!signal?.aborted) setRsvpState('error')
+    }
+  }, [familyEvent, currentUser, expireSession])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void loadRsvp(controller.signal)
+    return () => controller.abort()
+  }, [loadRsvp])
 
   const loadEvent = useCallback(async () => {
     if (!eventId) return setLoadingState('not-found')
@@ -113,6 +139,17 @@ export default function FamilyEventDetailsPage() {
           {familyEvent.wishlistUrl && <div><dt>Ønskeliste</dt><dd><a className="inline-link" href={familyEvent.wishlistUrl} target="_blank" rel="noreferrer">Se ønskeliste</a></dd></div>}
           {familyEvent.moreInfo && <div><dt>Mer informasjon</dt><dd className="preserve-lines">{familyEvent.moreInfo}</dd></div>}
         </dl>
+        {(location.state as { rsvpSaved?: boolean } | null)?.rsvpSaved && <p className="success-message" role="status">Svaret er lagret.</p>}
+        {!isOwner && (
+          <div className="family-event-rsvp-actions">
+            {rsvpState === 'error' ? <>
+              <p className="error-message" role="alert">Kunne ikke hente svaret på invitasjonen.</p>
+              <button className="secondary-button" type="button" onClick={() => void loadRsvp()}>Prøv igjen</button>
+            </> : <button className="primary-button" type="button" disabled={rsvpState === 'loading'} onClick={() => navigate(`/booking/event/${encodeURIComponent(familyEvent.id)}/svar`, { state: { calendarPath: returnPath } })}>
+              {rsvpState === 'loading' ? 'Henter svar …' : hasRsvp ? 'Endre svar' : 'Svar på invitasjon'}
+            </button>}
+          </div>
+        )}
         {isOwner && (
           <div className="booking-edit-card__actions">
             <button className="secondary-button" type="button" onClick={() => navigate(`/booking/edit/event/${encodeURIComponent(familyEvent.id)}`)}>Rediger arrangementet</button>

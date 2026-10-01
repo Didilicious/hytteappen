@@ -2222,6 +2222,43 @@ h1 {
   gap: 12px;
 }
 
+.family-event-rsvp-actions {
+  margin-top: 28px;
+}
+
+.family-event-rsvp__attendees {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.family-event-rsvp__attendees legend {
+  color: var(--forest);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.family-event-rsvp__hint {
+  margin: 10px 0 20px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.family-event-rsvp__guest {
+  display: grid;
+  gap: 12px;
+}
+
+.family-event-rsvp__guest .field-group {
+  padding-left: 16px;
+}
+
+.family-event-rsvp__attendees:disabled .checkbox-field {
+  opacity: 0.65;
+  cursor: default;
+}
+
 .checkbox-field {
   display: grid;
   grid-template-columns: 24px 1fr;
