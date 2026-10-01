@@ -25,6 +25,9 @@ export default function FamilyEventDetailsPage() {
   const [familyEvent, setFamilyEvent] = useState<FamilyEvent | null>(null)
   const [icon, setIcon] = useState<GuideImage | null | undefined>(undefined)
   const [loadingState, setLoadingState] = useState<LoadingState>('loading')
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const loadEvent = useCallback(async () => {
     if (!eventId) return setLoadingState('not-found')
@@ -54,6 +57,28 @@ export default function FamilyEventDetailsPage() {
   useEffect(() => { void loadEvent() }, [loadEvent])
 
   const returnPath = (location.state as { calendarPath?: string } | null)?.calendarPath ?? '/booking/calendar'
+
+  async function confirmDelete() {
+    if (!familyEvent || familyEvent.ownerId !== currentUser?.id || isDeleting) return
+    setIsDeleting(true)
+    setDeleteError('')
+    try {
+      const response = await fetch(`/.netlify/functions/delete-family-event?id=${encodeURIComponent(familyEvent.id)}`, {
+        method: 'DELETE', credentials: 'include', headers: { Accept: 'application/json' },
+      })
+      if (response.status === 401) return expireSession()
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { message?: unknown } | null
+        setDeleteError(typeof body?.message === 'string' ? body.message : 'Kunne ikke slette arrangementet. Prøv igjen.')
+        return
+      }
+      navigate(returnPath, { replace: true })
+    } catch {
+      setDeleteError('Kunne ikke slette arrangementet. Sjekk forbindelsen og prøv igjen.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   if (loadingState !== 'ready' || !familyEvent) {
     return (
@@ -88,8 +113,28 @@ export default function FamilyEventDetailsPage() {
           {familyEvent.wishlistUrl && <div><dt>Ønskeliste</dt><dd><a className="inline-link" href={familyEvent.wishlistUrl} target="_blank" rel="noreferrer">Se ønskeliste</a></dd></div>}
           {familyEvent.moreInfo && <div><dt>Mer informasjon</dt><dd className="preserve-lines">{familyEvent.moreInfo}</dd></div>}
         </dl>
-        {isOwner && <button className="secondary-button" type="button" onClick={() => navigate(`/booking/edit/event/${encodeURIComponent(familyEvent.id)}`)}>Rediger arrangementet</button>}
+        {isOwner && (
+          <div className="booking-edit-card__actions">
+            <button className="secondary-button" type="button" onClick={() => navigate(`/booking/edit/event/${encodeURIComponent(familyEvent.id)}`)}>Rediger arrangementet</button>
+            <button className="danger-button" type="button" onClick={() => { setDeleteError(''); setShowDeleteConfirmation(true) }}>Slett</button>
+          </div>
+        )}
       </article>
+      {isOwner && showDeleteConfirmation && (
+        <div className="booking-delete-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !isDeleting) setShowDeleteConfirmation(false)
+        }}>
+          <section className="booking-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-description">
+            <h2 id="delete-title">Er du sikker på at du vil slette dette arrangementet?</h2>
+            <p id="delete-description">{familyEvent.title}</p>
+            {deleteError && <p className="error-message" role="alert">{deleteError}</p>}
+            <div className="booking-delete-dialog__actions">
+              <button className="secondary-button" type="button" onClick={() => setShowDeleteConfirmation(false)} disabled={isDeleting}>Avbryt</button>
+              <button className="danger-button" type="button" onClick={() => void confirmDelete()} disabled={isDeleting}>{isDeleting ? 'Sletter …' : 'Slett'}</button>
+            </div>
+          </section>
+        </div>
+      )}
     </AppFrame>
   )
 }
