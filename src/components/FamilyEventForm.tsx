@@ -7,6 +7,7 @@ import AppFrame from './AppFrame'
 import { DatePickerField, TimePickerField } from './DateTimePickerFields'
 
 export type FamilyEventFormValues = {
+  createInvitation?: boolean
   organizerMemberIds?: string[]
   eventType: FamilyEventType | ''
   title: string
@@ -24,6 +25,7 @@ type Props = {
   ownerId: string
   ownerName: string
   initialValues?: FamilyEventFormValues
+  allowInvitation?: boolean
   submitLabel: string
   submittingLabel: string
   onSubmit: (values: FamilyEventFormValues) => Promise<string | void>
@@ -43,17 +45,22 @@ const emptyValues: FamilyEventFormValues = {
   moreInfo: '',
 }
 
+function getInitialValues(values: FamilyEventFormValues, allowInvitation: boolean) {
+  return allowInvitation ? { ...values, createInvitation: values.createInvitation ?? true } : values
+}
+
 export default function FamilyEventForm({
   title,
   ownerId,
   ownerName,
   initialValues = emptyValues,
+  allowInvitation = false,
   submitLabel,
   submittingLabel,
   onSubmit,
   onCancel,
 }: Props) {
-  const [values, setValues] = useState(initialValues)
+  const [values, setValues] = useState(() => getInitialValues(initialValues, allowInvitation))
   const [showEndDate, setShowEndDate] = useState(Boolean(initialValues.endDate))
   const [showEndTime, setShowEndTime] = useState(Boolean(initialValues.endTime))
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -64,7 +71,7 @@ export default function FamilyEventForm({
   const locationRef = useRef<HTMLTextAreaElement>(null)
   const moreInfoRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => setValues(initialValues), [initialValues])
+  useEffect(() => setValues(getInitialValues(initialValues, allowInvitation)), [initialValues, allowInvitation])
 
   useLayoutEffect(() => {
     for (const textarea of [locationRef.current, moreInfoRef.current]) {
@@ -272,6 +279,11 @@ export default function FamilyEventForm({
             </label>)}
           </div>
         </fieldset>
+
+        {allowInvitation && <label className="checkbox-field">
+          <input type="checkbox" checked={values.createInvitation ?? false} disabled={isSaving} onChange={(event) => setValue('createInvitation', event.target.checked)} />
+          <span>Lag også invitasjon på Oppslagstavlen</span>
+        </label>}
 
         <div className="booking-form__feedback" aria-live="polite">
           {saveError && <p className="error-message" role="alert">{saveError}</p>}

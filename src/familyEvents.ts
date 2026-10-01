@@ -57,15 +57,18 @@ export function hasFamilyEventsInMonth(events: FamilyEvent[], firstDate: string,
 }
 
 const dateFormatter = new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })
+const weekdayDateFormatter = new Intl.DateTimeFormat('nb-NO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-export function formatFamilyEventDate(dateKey: string) {
+export function formatFamilyEventDate(dateKey: string, includeWeekday = false) {
   const date = parseLocalDate(dateKey)
-  return date ? dateFormatter.format(date) : dateKey
+  if (!date) return dateKey
+  const formatted = (includeWeekday ? weekdayDateFormatter : dateFormatter).format(date)
+  return includeWeekday ? formatted.charAt(0).toLocaleUpperCase('nb-NO') + formatted.slice(1) : formatted
 }
 
-export function formatFamilyEventDateRange(event: Pick<FamilyEvent, 'startDate' | 'endDate'>) {
-  if (!event.endDate || event.endDate === event.startDate) return formatFamilyEventDate(event.startDate)
-  return `${formatFamilyEventDate(event.startDate)}–${formatFamilyEventDate(event.endDate)}`
+export function formatFamilyEventDateRange(event: Pick<FamilyEvent, 'startDate' | 'endDate'>, includeWeekday = false) {
+  if (!event.endDate || event.endDate === event.startDate) return formatFamilyEventDate(event.startDate, includeWeekday)
+  return `${formatFamilyEventDate(event.startDate, includeWeekday)}–${formatFamilyEventDate(event.endDate, includeWeekday)}`
 }
 
 export function formatFamilyEventTime(event: Pick<FamilyEvent, 'startTime' | 'endTime'>) {

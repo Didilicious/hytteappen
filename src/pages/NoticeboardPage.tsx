@@ -6,6 +6,7 @@ import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import NoticeboardTypeIcon from '../components/NoticeboardTypeIcon'
 import ProfileImage from '../components/ProfileImage'
+import FamilyEventInvitationCard from '../components/FamilyEventInvitationCard'
 import { loadOpenNoticeboardPosts, markNoticeboardPostSolved } from '../noticeboard'
 
 const noticeboardDateFormatter = new Intl.DateTimeFormat('nb-NO', {
@@ -115,6 +116,7 @@ export default function NoticeboardPage() {
                   </div>
                   <h2><Link to={`/noticeboard/${post.id}`}>{post.title}</Link></h2>
                   {post.description && <p className="noticeboard-card__description">{post.description}</p>}
+                  {post.eventId && <FamilyEventInvitationCard eventId={post.eventId} />}
                   <div className="noticeboard-card__author">
                     {owner && (
                       <ProfileImage
@@ -137,16 +139,19 @@ export default function NoticeboardPage() {
                         ? '1 kommentar'
                         : `${post.commentCount} kommentarer`}
                   </Link>
-                  {isOwner && (
-                    <button
-                      className="noticeboard-solve-button"
-                      type="button"
-                      disabled={solvingPostId === post.id}
-                      onClick={() => void solvePost(post)}
-                    >
-                      {solvingPostId === post.id ? 'Markerer …' : 'Marker som løst'}
-                    </button>
-                  )}
+                  <div className="noticeboard-card__actions">
+                    <Link className="noticeboard-card__action" to={`/noticeboard/${post.id}`}>Se innlegg</Link>
+                    {isOwner && (
+                      <button
+                        className="noticeboard-card__action noticeboard-solve-button"
+                        type="button"
+                        disabled={solvingPostId === post.id}
+                        onClick={() => void solvePost(post)}
+                      >
+                        {solvingPostId === post.id ? 'Markerer …' : post.eventId ? 'Marker som ferdig' : 'Marker som løst'}
+                      </button>
+                    )}
+                  </div>
                 </article>
               )
             })}

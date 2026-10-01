@@ -4,12 +4,14 @@ import { normalizeOrganizerAttendance } from '../../shared/familyEventRsvps.ts'
 import { saveFamilyEventRsvp } from './_shared/family-event-rsvps.mts'
 import { prepareFamilyEvent, type FamilyEventInput } from './_shared/family-event-input.mts'
 import { createFamilyEvent } from './_shared/family-events.mts'
+import { createFamilyEventInvitation } from './_shared/noticeboard-posts.mts'
 import { clearSessionCookie, getAuthenticatedFamilyMember, jsonResponse } from './_shared/session.mts'
 
 type Dependencies = {
   authenticate: typeof getAuthenticatedFamilyMember
   saveEvent: typeof createFamilyEvent
   saveRsvp: typeof saveFamilyEventRsvp
+  saveInvitation: typeof createFamilyEventInvitation
   now: () => string
   createId: () => string
 }
@@ -18,6 +20,7 @@ export function createFamilyEventFunction({
   authenticate = getAuthenticatedFamilyMember,
   saveEvent = createFamilyEvent,
   saveRsvp = saveFamilyEventRsvp,
+  saveInvitation = createFamilyEventInvitation,
   now = () => new Date().toISOString(),
   createId = randomUUID,
 }: Partial<Dependencies> = {}) {
@@ -38,6 +41,9 @@ export function createFamilyEventFunction({
       if (!input || typeof input !== 'object' || Array.isArray(input)) {
         return jsonResponse({ message: 'Kontroller opplysningene og prøv igjen.' }, { status: 400 })
       }
+      if (input.createInvitation !== undefined && typeof input.createInvitation !== 'boolean') {
+        return jsonResponse({ message: 'Velg om du vil lage en invitasjon.' }, { status: 400 })
+      }
       const attendance = normalizeOrganizerAttendance(input.organizerMemberIds === undefined ? [] : input.organizerMemberIds, familyMember.id)
       if (!attendance) return jsonResponse({ message: 'Velg gyldige familiemedlemmer.' }, { status: 400 })
       const event = prepareFamilyEvent(input, {
@@ -49,6 +55,7 @@ export function createFamilyEventFunction({
 
       await saveEvent(event)
       await saveRsvp(event.id, familyMember.id, attendance, timestamp)
+      if (input.createInvitation) await saveInvitation(event)
       return jsonResponse({ event }, { status: 201 })
     } catch {
       return jsonResponse({ message: 'Kunne ikke lagre arrangementet. Prøv igjen.' }, { status: 500 })

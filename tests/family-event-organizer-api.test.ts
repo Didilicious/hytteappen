@@ -20,6 +20,7 @@ function dependencies() {
     loadRsvps: vi.fn().mockResolvedValue([]),
     saveEvent: vi.fn().mockResolvedValue(undefined),
     saveRsvp: vi.fn().mockResolvedValue({}),
+    saveInvitation: vi.fn().mockResolvedValue({}),
     now: () => timestamp,
     createId: () => eventId,
   }
@@ -32,6 +33,33 @@ function request(method: string, input: unknown = familyEvent, search = '') {
 }
 
 describe('organizer attendance persistence', () => {
+  it.each([false, undefined])('does not publish an invitation unless selected (%s)', async (createInvitation) => {
+    const deps = dependencies()
+    expect((await createFamilyEventFunction(deps)(request('POST', { ...familyEvent, createInvitation }))).status).toBe(201)
+    expect(deps.saveInvitation).not.toHaveBeenCalled()
+  })
+
+  it('publishes a selected invitation with the stable event ID and authenticated organizer', async () => {
+    const deps = dependencies()
+    const response = await createFamilyEventFunction(deps)(request('POST', { ...familyEvent, ownerId: 'anette', createInvitation: true }))
+    expect(response.status).toBe(201)
+    expect(deps.saveInvitation).toHaveBeenCalledExactlyOnceWith(familyEvent)
+    expect(await response.json()).toEqual({ event: familyEvent })
+  })
+
+  it('rejects non-boolean invitation selections before saving', async () => {
+    const deps = dependencies()
+    expect((await createFamilyEventFunction(deps)(request('POST', { ...familyEvent, createInvitation: 'true' }))).status).toBe(400)
+    expect(deps.saveEvent).not.toHaveBeenCalled()
+    expect(deps.saveInvitation).not.toHaveBeenCalled()
+  })
+
+  it('does not report success when publishing the invitation fails', async () => {
+    const deps = dependencies()
+    deps.saveInvitation.mockRejectedValue(new Error('Database unavailable'))
+    expect((await createFamilyEventFunction(deps)(request('POST', { ...familyEvent, createInvitation: true }))).status).toBe(500)
+  })
+
   it.each([{ memberIds: [] }, { memberIds: ['mads', 'casper'] }])('creates organizer attendance using the RSVP model for %j', async ({ memberIds }) => {
     const deps = dependencies()
     const response = await createFamilyEventFunction(deps)(request('POST', { ...familyEvent, organizerMemberIds: memberIds }))

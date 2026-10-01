@@ -6,6 +6,7 @@ export const noticeboardPosts = pgTable('noticeboard_posts', {
   type: text().notNull(),
   title: text().notNull(),
   description: text().notNull().default(''),
+  eventId: uuid('event_id').unique(),
   status: text().notNull().default('open'),
   createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true }).notNull(),

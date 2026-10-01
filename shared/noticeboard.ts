@@ -8,6 +8,7 @@ export type NoticeboardPost = {
   type: NoticeboardPostType
   title: string
   description: string
+  eventId?: string | null
   status: 'open' | 'solved'
   createdAt: string
   updatedAt: string
