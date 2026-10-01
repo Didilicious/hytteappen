@@ -3,6 +3,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { GuideImage } from '../../shared/guideImages'
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
+import FamilyEventAttendance from '../components/FamilyEventAttendance'
+import type { FamilyEventAttendance as Attendance } from '../../shared/familyEventRsvps'
 import DriveIcon, { warnAboutMissingDriveIcons } from '../components/DriveIcon'
 import {
   familyEventIconNames,
@@ -23,6 +25,7 @@ export default function FamilyEventDetailsPage() {
   const location = useLocation()
   const { currentUser, expireSession } = useAuth()
   const [familyEvent, setFamilyEvent] = useState<FamilyEvent | null>(null)
+  const [attendance, setAttendance] = useState<Attendance | null>(null)
   const [icon, setIcon] = useState<GuideImage | null | undefined>(undefined)
   const [loadingState, setLoadingState] = useState<LoadingState>('loading')
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
@@ -65,10 +68,11 @@ export default function FamilyEventDetailsPage() {
       if (response.status === 401) return expireSession()
       if (response.status === 404) return setLoadingState('not-found')
       if (!response.ok) throw new Error('Failed to load event')
-      const body = await response.json() as { event?: unknown }
+      const body = await response.json() as { event?: unknown; attendance?: Attendance }
       const nextEvent = normalizeFamilyEvent(body.event)
       if (!nextEvent) throw new Error('Invalid event')
       setFamilyEvent(nextEvent)
+      setAttendance(body.attendance ?? null)
       setLoadingState('ready')
       const iconName = familyEventIconNames[nextEvent.eventType]
       loadHomeIcons([iconName]).then((icons) => setIcon(icons[iconName])).catch(() => {
@@ -139,6 +143,7 @@ export default function FamilyEventDetailsPage() {
           {familyEvent.wishlistUrl && <div><dt>Ønskeliste</dt><dd><a className="inline-link" href={familyEvent.wishlistUrl} target="_blank" rel="noreferrer">Se ønskeliste</a></dd></div>}
           {familyEvent.moreInfo && <div><dt>Mer informasjon</dt><dd className="preserve-lines">{familyEvent.moreInfo}</dd></div>}
         </dl>
+        <FamilyEventAttendance attendance={attendance} />
         {(location.state as { rsvpSaved?: boolean } | null)?.rsvpSaved && <p className="success-message" role="status">Svaret er lagret.</p>}
         {!isOwner && (
           <div className="family-event-rsvp-actions">
@@ -152,7 +157,7 @@ export default function FamilyEventDetailsPage() {
         )}
         {isOwner && (
           <div className="booking-edit-card__actions">
-            <button className="secondary-button" type="button" onClick={() => navigate(`/booking/edit/event/${encodeURIComponent(familyEvent.id)}`)}>Rediger arrangementet</button>
+            <button className="secondary-button" type="button" onClick={() => navigate(`/booking/edit/event/${encodeURIComponent(familyEvent.id)}`, { state: { calendarPath: returnPath } })}>Rediger arrangementet</button>
             <button className="danger-button" type="button" onClick={() => { setDeleteError(''); setShowDeleteConfirmation(true) }}>Slett</button>
           </div>
         )}

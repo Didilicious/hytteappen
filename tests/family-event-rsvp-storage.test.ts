@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { familyEventRsvps } from '../db/schema'
-import { readFamilyEventRsvp, saveFamilyEventRsvp } from '../netlify/functions/_shared/family-event-rsvps.mts'
+import { readFamilyEventRsvp, readFamilyEventRsvps, saveFamilyEventRsvp } from '../netlify/functions/_shared/family-event-rsvps.mts'
 
 const database = vi.hoisted(() => ({ select: vi.fn(), insert: vi.fn() }))
 vi.mock('../db/index.ts', () => ({ getDb: () => database }))
@@ -12,6 +12,15 @@ const response = { ...input, eventId, familyId: 'anette', createdAt: timestamp, 
 
 describe('persistent RSVP storage', () => {
   beforeEach(() => vi.clearAllMocks())
+
+  it('loads all responses scoped to one event', async () => {
+    const where = vi.fn().mockResolvedValue([response])
+    const from = vi.fn().mockReturnValue({ where })
+    database.select.mockReturnValue({ from })
+    expect(await readFamilyEventRsvps(eventId)).toEqual([response])
+    expect(from).toHaveBeenCalledWith(familyEventRsvps)
+    expect(where).toHaveBeenCalledOnce()
+  })
 
   it('inserts by stable event/family key and atomically updates only response fields and update time', async () => {
     const returning = vi.fn().mockResolvedValue([response])

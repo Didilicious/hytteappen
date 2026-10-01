@@ -77,18 +77,18 @@ function calendarWeeks(month: Date) {
   return weeks
 }
 
-function useDismissablePicker(open: boolean, close: () => void) {
+function useDismissablePicker(open: boolean, close: (reason: 'outside' | 'escape') => void) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
 
     function handlePointerDown(event: PointerEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) close()
+      if (!containerRef.current?.contains(event.target as Node)) close('outside')
     }
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') close()
+      if (event.key === 'Escape') close('escape')
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
@@ -211,13 +211,20 @@ export function TimePickerField({ id, label, value, error, onChange }: TimePicke
   const [open, setOpen] = useState(false)
   const [draftHour, setDraftHour] = useState('12')
   const [draftMinute, setDraftMinute] = useState('00')
-  const containerRef = useDismissablePicker(open, () => setOpen(false))
+  const [hasSelection, setHasSelection] = useState(false)
+  const containerRef = useDismissablePicker(open, closePicker)
   const popoverId = `${id}-picker`
+
+  function closePicker(reason: 'outside' | 'escape' = 'outside') {
+    if (reason === 'outside' && hasSelection) onChange(`${draftHour}:${draftMinute}`)
+    setOpen(false)
+  }
 
   function openPicker() {
     const [hour = '12', minute = '00'] = value.split(':')
     setDraftHour(hours.includes(hour) ? hour : '12')
     setDraftMinute(minutes.includes(minute) ? minute : '00')
+    setHasSelection(false)
     setOpen(true)
   }
 
@@ -233,7 +240,7 @@ export function TimePickerField({ id, label, value, error, onChange }: TimePicke
         aria-expanded={open}
         aria-controls={popoverId}
         aria-invalid={Boolean(error)}
-        onClick={() => open ? setOpen(false) : openPicker()}
+        onClick={() => open ? closePicker() : openPicker()}
       >
         <span id={`${id}-value`} className={value ? 'picker-field__time-value' : 'picker-field__placeholder'}>
           {value || 'Velg tidspunkt'}
@@ -252,7 +259,7 @@ export function TimePickerField({ id, label, value, error, onChange }: TimePicke
                     key={hour}
                     type="button"
                     aria-pressed={draftHour === hour}
-                    onClick={() => setDraftHour(hour)}
+                    onClick={() => { setDraftHour(hour); setHasSelection(true) }}
                   >
                     {hour}
                   </button>
@@ -267,7 +274,7 @@ export function TimePickerField({ id, label, value, error, onChange }: TimePicke
                     key={minute}
                     type="button"
                     aria-pressed={draftMinute === minute}
-                    onClick={() => setDraftMinute(minute)}
+                    onClick={() => { setDraftMinute(minute); setHasSelection(true) }}
                   >
                     {minute}
                   </button>

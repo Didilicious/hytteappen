@@ -1,14 +1,15 @@
 import type { Config } from '@netlify/functions'
-import { normalizeFamilyEventRsvpInput } from '../../shared/familyEventRsvps.ts'
+import { getFamilyEventAttendance, normalizeFamilyEventRsvpInput } from '../../shared/familyEventRsvps.ts'
 import { isValidFamilyEventId } from './_shared/family-event-id.mts'
 import { readFamilyEvent } from './_shared/family-events.mts'
-import { readFamilyEventRsvp, saveFamilyEventRsvp } from './_shared/family-event-rsvps.mts'
+import { readFamilyEventRsvp, readFamilyEventRsvps, saveFamilyEventRsvp } from './_shared/family-event-rsvps.mts'
 import { clearSessionCookie, getAuthenticatedFamilyMember, jsonResponse } from './_shared/session.mts'
 
 type Dependencies = {
   authenticate: typeof getAuthenticatedFamilyMember
   loadEvent: typeof readFamilyEvent
   loadRsvp: typeof readFamilyEventRsvp
+  loadRsvps: typeof readFamilyEventRsvps
   saveRsvp: typeof saveFamilyEventRsvp
   now: () => string
 }
@@ -17,6 +18,7 @@ export function createFamilyEventRsvpFunction({
   authenticate = getAuthenticatedFamilyMember,
   loadEvent = readFamilyEvent,
   loadRsvp = readFamilyEventRsvp,
+  loadRsvps = readFamilyEventRsvps,
   saveRsvp = saveFamilyEventRsvp,
   now = () => new Date().toISOString(),
 }: Partial<Dependencies> = {}) {
@@ -39,7 +41,8 @@ export function createFamilyEventRsvpFunction({
         return jsonResponse({ message: 'Du kan ikke svare på ditt eget arrangement.' }, { status: 403 })
       }
       if (request.method === 'GET') {
-        return jsonResponse({ event, rsvp: await loadRsvp(eventId, family.id) })
+        const [rsvp, rsvps] = await Promise.all([loadRsvp(eventId, family.id), loadRsvps(eventId)])
+        return jsonResponse({ event, rsvp, attendance: getFamilyEventAttendance(eventId, rsvps) })
       }
       const input = normalizeFamilyEventRsvpInput(await request.json().catch(() => null), family.id)
       if (!input) {

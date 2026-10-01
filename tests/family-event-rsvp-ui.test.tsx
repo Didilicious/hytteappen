@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getFamily } from '../shared/families'
-import type { FamilyEventRsvp } from '../shared/familyEventRsvps'
+import { getFamilyEventAttendance, type FamilyEventRsvp } from '../shared/familyEventRsvps'
 import FamilyEventDetailsPage from '../src/pages/FamilyEventDetailsPage'
 import FamilyEventRsvpPage from '../src/pages/FamilyEventRsvpPage'
 
@@ -57,9 +57,9 @@ describe('family event invitation response', () => {
           if (saveStatus !== 200) return new Response(JSON.stringify({ message: 'Kunne ikke lagre svaret.' }), { status: saveStatus })
           persisted = { ...JSON.parse(String(options.body)), eventId, familyId: auth.currentUser.id, createdAt: persisted?.createdAt ?? savedRsvp.createdAt, updatedAt: '2026-10-01T10:00:00.000Z' }
         }
-        return new Response(JSON.stringify({ event: { ...familyEvent, ownerId }, rsvp: persisted }), { status: loadStatus })
+        return new Response(JSON.stringify({ event: { ...familyEvent, ownerId }, rsvp: persisted, attendance: getFamilyEventAttendance(eventId, persisted ? [persisted] : []) }), { status: loadStatus })
       }
-      return new Response(JSON.stringify({ event: { ...familyEvent, ownerId } }), { status: 200 })
+      return new Response(JSON.stringify({ event: { ...familyEvent, ownerId }, attendance: getFamilyEventAttendance(eventId, persisted ? [persisted] : []) }), { status: 200 })
     })
     vi.stubGlobal('fetch', fetchMock)
     const container = document.createElement('div')
@@ -210,6 +210,31 @@ describe('family event invitation response', () => {
     expect(container.textContent).not.toContain('Svar på invitasjon')
     expect(container.textContent).not.toContain('Endre svar')
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('family-event-rsvp'))).toBe(false)
+  })
+
+  it.each([true, false])('shows all three person counts and opens each attendance list (details: %s)', async (details) => {
+    const { container } = await renderPage({ details, rsvp: savedRsvp })
+    const attendance = getFamilyEventAttendance(eventId, [savedRsvp])
+    for (const [label, people] of [
+      ['Kommer', attendance.attending], ['Kommer ikke', attendance.notAttending], ['Ikke svart', attendance.unanswered],
+    ] as const) {
+      act(() => button(container, `${label} · ${people.length}`).click())
+      const dialog = container.querySelector('dialog')!
+      expect(dialog.open).toBe(true)
+      expect([...dialog.querySelectorAll('li')].map((entry) => entry.textContent)).toEqual(people.map((person) => person.displayName))
+      await act(async () => button(dialog, 'Lukk').click())
+      expect(container.querySelector('dialog')).toBeNull()
+    }
+  })
+
+  it('shows saved attendance summaries below the RSVP form, not unsaved choices', async () => {
+    const { container } = await renderPage({ rsvp: savedRsvp })
+    const list = container.querySelector('section[aria-label="Deltakelse"]')!
+    expect(container.querySelector('form')?.nextElementSibling).toBe(list)
+    act(() => checkbox(container, 'Anette').click())
+    act(() => button(list, 'Kommer · 3').click())
+    const dialog = list.querySelector('dialog')!
+    expect([...dialog.querySelectorAll('li')].map((entry) => entry.textContent)).toEqual(['Trond', 'Ingrid', 'Sindre'])
   })
 
   it.each([

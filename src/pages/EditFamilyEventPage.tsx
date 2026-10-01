@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth'
 import FamilyEventForm, { type FamilyEventFormValues } from '../components/FamilyEventForm'
 import { getFamilyEventOwnerName, normalizeFamilyEvent, type FamilyEvent } from '../familyEvents'
 import AppFrame from '../components/AppFrame'
+import type { FamilyEventRsvp } from '../../shared/familyEventRsvps'
 
 type LoadingState = 'loading' | 'ready' | 'not-found' | 'forbidden' | 'error'
 
@@ -15,9 +16,12 @@ async function readErrorMessage(response: Response, fallback: string) {
 export default function EditFamilyEventPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnPath = (location.state as { calendarPath?: string } | null)?.calendarPath ?? '/booking/edit'
   const { currentUser, expireSession } = useAuth()
   const [familyEvent, setFamilyEvent] = useState<FamilyEvent | null>(null)
   const [loadingState, setLoadingState] = useState<LoadingState>('loading')
+  const [organizerMemberIds, setOrganizerMemberIds] = useState<string[]>([])
 
   const loadEvent = useCallback(async () => {
     if (!eventId) return setLoadingState('not-found')
@@ -30,11 +34,12 @@ export default function EditFamilyEventPage() {
       if (response.status === 404) return setLoadingState('not-found')
       if (response.status === 403) return setLoadingState('forbidden')
       if (!response.ok) throw new Error('Failed to load event')
-      const body = await response.json() as { event?: unknown }
+      const body = await response.json() as { event?: unknown; organizerRsvp?: FamilyEventRsvp | null }
       const nextEvent = normalizeFamilyEvent(body.event)
       if (!nextEvent) throw new Error('Invalid event')
       if (nextEvent.ownerId !== currentUser?.id) return setLoadingState('forbidden')
       setFamilyEvent(nextEvent)
+      setOrganizerMemberIds(body.organizerRsvp?.memberIds ?? [])
       setLoadingState('ready')
     } catch {
       setLoadingState('error')
@@ -55,7 +60,7 @@ export default function EditFamilyEventPage() {
         return 'Økten har utløpt. Logg inn på nytt.'
       }
       if (!response.ok) return readErrorMessage(response, 'Kunne ikke lagre endringene. Prøv igjen.')
-      navigate('/booking/edit', { replace: true, state: { eventUpdated: true } })
+      navigate(returnPath, { replace: true, state: { eventUpdated: true } })
     } catch {
       return 'Kunne ikke lagre endringene. Sjekk forbindelsen og prøv igjen.'
     }
@@ -68,6 +73,7 @@ export default function EditFamilyEventPage() {
         ownerId={familyEvent.ownerId}
         ownerName={getFamilyEventOwnerName(familyEvent.ownerId)}
         initialValues={{
+          organizerMemberIds,
           eventType: familyEvent.eventType,
           title: familyEvent.title,
           startDate: familyEvent.startDate,
@@ -81,7 +87,7 @@ export default function EditFamilyEventPage() {
         submitLabel="Lagre endringer"
         submittingLabel="Lagrer endringer …"
         onSubmit={saveEvent}
-        onCancel={() => navigate('/booking/edit')}
+        onCancel={() => navigate(returnPath)}
       />
     )
   }
@@ -94,7 +100,7 @@ export default function EditFamilyEventPage() {
         {loadingState === 'not-found' && <p role="alert">Arrangementet finnes ikke lenger.</p>}
         {loadingState === 'forbidden' && <p role="alert">Du kan bare redigere dine egne arrangementer.</p>}
         {loadingState === 'error' && <><p role="alert">Kunne ikke hente arrangementet.</p><button className="secondary-button" type="button" onClick={() => void loadEvent()}>Prøv igjen</button></>}
-        {loadingState !== 'loading' && <button className="text-button" type="button" onClick={() => navigate('/booking/edit')}>Tilbake til dine registreringer</button>}
+        {loadingState !== 'loading' && <button className="text-button" type="button" onClick={() => navigate(returnPath)}>{returnPath === '/booking/edit' ? 'Tilbake til dine registreringer' : 'Tilbake til kalenderen'}</button>}
       </section>
     </AppFrame>
   )

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getFamily } from '../../shared/families'
-import { normalizeFamilyEventRsvpInput, type FamilyEventRsvp } from '../../shared/familyEventRsvps'
+import { normalizeFamilyEventRsvpInput, type FamilyEventAttendance as Attendance, type FamilyEventRsvp } from '../../shared/familyEventRsvps'
 import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
+import FamilyEventAttendance from '../components/FamilyEventAttendance'
 import { formatFamilyEventDateRange, formatFamilyEventTime, normalizeFamilyEvent, type FamilyEvent } from '../familyEvents'
 
 type GuestEntry = { id: string; name: string }
@@ -16,6 +17,7 @@ export default function FamilyEventRsvpPage() {
   const { currentUser, expireSession } = useAuth()
   const family = getFamily(currentUser?.id)
   const [familyEvent, setFamilyEvent] = useState<FamilyEvent | null>(null)
+  const [attendance, setAttendance] = useState<Attendance | null>(null)
   const [loadingState, setLoadingState] = useState<LoadingState>('loading')
   const [memberIds, setMemberIds] = useState<string[]>([])
   const [guests, setGuests] = useState<GuestEntry[]>([])
@@ -38,11 +40,12 @@ export default function FamilyEventRsvpPage() {
       if (response.status === 404) return setLoadingState('not-found')
       if (response.status === 403) return setLoadingState('forbidden')
       if (!response.ok) throw new Error('Failed to load RSVP')
-      const body = await response.json() as { event?: unknown; rsvp: FamilyEventRsvp | null }
+      const body = await response.json() as { event?: unknown; rsvp: FamilyEventRsvp | null; attendance?: Attendance }
       if (signal?.aborted) return
       const event = normalizeFamilyEvent(body.event)
       if (!event) throw new Error('Invalid event')
       setFamilyEvent(event)
+      setAttendance(body.attendance ?? null)
       setMemberIds(body.rsvp?.memberIds ?? [])
       setGuests((body.rsvp?.guestNames ?? []).map((name) => ({ id: crypto.randomUUID(), name })))
       setNobodyAttending(body.rsvp?.nobodyAttending ?? false)
@@ -164,6 +167,7 @@ export default function FamilyEventRsvpPage() {
           <button className="text-button" type="button" disabled={isSaving} onClick={() => navigate(eventPath, { state: { calendarPath } })}>Avbryt</button>
         </div>
       </form>
+      <FamilyEventAttendance attendance={attendance} />
     </article>
   </AppFrame>
 }

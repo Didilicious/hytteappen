@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { normalizeFamilyEventRsvpInput } from '../shared/familyEventRsvps'
+import { getFamilyEventAttendance, normalizeFamilyEventRsvpInput } from '../shared/familyEventRsvps'
 import { createFamilyEventRsvpFunction } from '../netlify/functions/family-event-rsvp.mts'
 import type { FamilyEvent } from '../shared/familyEvents'
 
@@ -23,6 +23,7 @@ function dependencies() {
     authenticate: () => ({ id: 'anette', displayName: 'Anette' }),
     loadEvent: vi.fn().mockResolvedValue(familyEvent),
     loadRsvp: vi.fn().mockResolvedValue(null),
+    loadRsvps: vi.fn().mockResolvedValue([]),
     saveRsvp: vi.fn().mockResolvedValue({ ...validInput, eventId, familyId: 'anette', createdAt: timestamp, updatedAt: timestamp }),
     now: () => timestamp,
   }
@@ -78,7 +79,7 @@ describe('authenticated family event RSVP API', () => {
     const existing = { ...validInput, eventId, familyId: 'anette', createdAt: timestamp, updatedAt: timestamp }
     deps.loadRsvp.mockResolvedValue(existing)
     const response = await createFamilyEventRsvpFunction(deps)(new Request(`${request().url}&familyId=mads`))
-    expect(await response.json()).toEqual({ event: familyEvent, rsvp: existing })
+    expect(await response.json()).toEqual({ event: familyEvent, rsvp: existing, attendance: getFamilyEventAttendance(eventId, []) })
     expect(deps.loadRsvp).toHaveBeenCalledWith(eventId, 'anette')
   })
 

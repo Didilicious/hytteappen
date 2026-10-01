@@ -1,4 +1,6 @@
 import type { Config } from '@netlify/functions'
+import { normalizeOrganizerAttendance } from '../../shared/familyEventRsvps.ts'
+import { saveFamilyEventRsvp } from './_shared/family-event-rsvps.mts'
 import { isValidFamilyEventId } from './_shared/family-event-id.mts'
 import { prepareFamilyEventUpdate, type FamilyEventInput } from './_shared/family-event-input.mts'
 import { readFamilyEvent, updateFamilyEvent } from './_shared/family-events.mts'
@@ -8,6 +10,7 @@ type Dependencies = {
   authenticate: typeof getAuthenticatedFamilyMember
   loadEvent: typeof readFamilyEvent
   saveEvent: typeof updateFamilyEvent
+  saveRsvp: typeof saveFamilyEventRsvp
   now: () => string
 }
 
@@ -15,6 +18,7 @@ export function createUpdateFamilyEventFunction({
   authenticate = getAuthenticatedFamilyMember,
   loadEvent = readFamilyEvent,
   saveEvent = updateFamilyEvent,
+  saveRsvp = saveFamilyEventRsvp,
   now = () => new Date().toISOString(),
 }: Partial<Dependencies> = {}) {
   return async function updateFamilyEventFunction(request: Request) {
@@ -37,9 +41,18 @@ export function createUpdateFamilyEventFunction({
         return jsonResponse({ message: 'Du kan bare redigere dine egne arrangementer.' }, { status: 403 })
       }
 
-      const event = prepareFamilyEventUpdate(await request.json() as FamilyEventInput, existing, now())
+      const input = await request.json().catch(() => null) as FamilyEventInput | null
+      if (!input || typeof input !== 'object' || Array.isArray(input)) {
+        return jsonResponse({ message: 'Kontroller opplysningene og prøv igjen.' }, { status: 400 })
+      }
+      const attendance = input.organizerMemberIds === undefined ? undefined
+        : normalizeOrganizerAttendance(input.organizerMemberIds, familyMember.id)
+      if (attendance === null) return jsonResponse({ message: 'Velg gyldige familiemedlemmer.' }, { status: 400 })
+      const timestamp = now()
+      const event = prepareFamilyEventUpdate(input, existing, timestamp)
       if (!event) return jsonResponse({ message: 'Kontroller opplysningene og prøv igjen.' }, { status: 400 })
       await saveEvent(event)
+      if (attendance) await saveRsvp(event.id, familyMember.id, attendance, timestamp)
       return jsonResponse({ event })
     } catch {
       return jsonResponse({ message: 'Kunne ikke lagre endringene. Prøv igjen.' }, { status: 500 })
