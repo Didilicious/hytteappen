@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import AppFrame from './AppFrame'
+import { DatePickerField } from './DateTimePickerFields'
 
 export type BookingFormValues = {
   fromDate: string
@@ -102,45 +103,38 @@ export default function BookingForm({
 
       <form className="booking-form page-enter page-enter--delay" onSubmit={handleSubmit} noValidate>
         <div className="booking-date-grid">
-          <div className="field-group">
-            <label htmlFor="from-date">Fra dato</label>
-            <input
-              id="from-date"
-              name="fromDate"
-              type="date"
-              required
-              value={fromDate}
-              onChange={(event) => {
-                setFromDate(event.target.value)
-                setErrors((current) => ({ ...current, fromDate: undefined, toDate: undefined }))
-                clearSaveError()
-              }}
-              aria-invalid={Boolean(errors.fromDate)}
-              aria-describedby={errors.fromDate ? 'from-date-error date-help' : 'date-help'}
-              autoFocus
-            />
-            {errors.fromDate && <p id="from-date-error" className="error-message">{errors.fromDate}</p>}
-          </div>
-
-          <div className="field-group">
-            <label htmlFor="to-date">Til dato</label>
-            <input
-              id="to-date"
-              name="toDate"
-              type="date"
-              required
-              min={fromDate || undefined}
-              value={toDate}
-              onChange={(event) => {
-                setToDate(event.target.value)
-                setErrors((current) => ({ ...current, toDate: undefined }))
-                clearSaveError()
-              }}
-              aria-invalid={Boolean(errors.toDate)}
-              aria-describedby={errors.toDate ? 'to-date-error date-help' : 'date-help'}
-            />
-            {errors.toDate && <p id="to-date-error" className="error-message">{errors.toDate}</p>}
-          </div>
+          <DatePickerField
+            id="from-date"
+            name="fromDate"
+            label="Fra dato"
+            displayFormat="DD/MM/YYYY"
+            required
+            value={fromDate}
+            onChange={(value) => {
+              setFromDate(value)
+              setErrors((current) => ({ ...current, fromDate: undefined, toDate: undefined }))
+              clearSaveError()
+            }}
+            error={errors.fromDate}
+            describedBy={errors.fromDate ? 'from-date-error date-help' : 'date-help'}
+            autoFocus
+          />
+          <DatePickerField
+            id="to-date"
+            name="toDate"
+            label="Til dato"
+            displayFormat="DD/MM/YYYY"
+            required
+            min={fromDate || undefined}
+            value={toDate}
+            onChange={(value) => {
+              setToDate(value)
+              setErrors((current) => ({ ...current, toDate: undefined }))
+              clearSaveError()
+            }}
+            error={errors.toDate}
+            describedBy={errors.toDate ? 'to-date-error date-help' : 'date-help'}
+          />
         </div>
 
         <p id="date-help" className="field-help">Begge datoene er inkludert.</p>

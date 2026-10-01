@@ -7,6 +7,10 @@ type DatePickerFieldProps = {
   min?: string
   required?: boolean
   error?: string
+  name?: string
+  autoFocus?: boolean
+  describedBy?: string
+  displayFormat?: 'DD/MM/YYYY'
   onChange: (value: string) => void
 }
 
@@ -98,7 +102,7 @@ function useDismissablePicker(open: boolean, close: () => void) {
   return containerRef
 }
 
-export function DatePickerField({ id, label, value, min, required, error, onChange }: DatePickerFieldProps) {
+export function DatePickerField({ id, label, value, min, required, error, name, autoFocus, describedBy, displayFormat, onChange }: DatePickerFieldProps) {
   const selectedDate = parseDate(value)
   const minimumDate = min ? parseDate(min) : null
   const [open, setOpen] = useState(false)
@@ -107,6 +111,12 @@ export function DatePickerField({ id, label, value, min, required, error, onChan
   const weeks = useMemo(() => calendarWeeks(visibleMonth), [visibleMonth])
   const todayValue = formatDateValue(new Date())
   const popoverId = `${id}-picker`
+
+  function formatDisplayDate(date: Date) {
+    return displayFormat === 'DD/MM/YYYY'
+      ? formatDateValue(date).split('-').reverse().join('/')
+      : dateFormatter.format(date)
+  }
 
   function openPicker() {
     setVisibleMonth(selectedDate ?? minimumDate ?? new Date())
@@ -123,7 +133,7 @@ export function DatePickerField({ id, label, value, min, required, error, onChan
   return (
     <div className="field-group picker-field" ref={containerRef}>
       <label id={`${id}-label`}>{label}</label>
-      <input id={id} type="hidden" value={value} required={required} aria-labelledby={`${id}-label`} />
+      <input id={id} name={name} type="hidden" value={value} required={required} aria-labelledby={`${id}-label`} />
       <button
         className="picker-field__trigger"
         type="button"
@@ -132,10 +142,12 @@ export function DatePickerField({ id, label, value, min, required, error, onChan
         aria-expanded={open}
         aria-controls={popoverId}
         aria-invalid={Boolean(error)}
+        aria-describedby={describedBy}
+        autoFocus={autoFocus}
         onClick={() => open ? setOpen(false) : openPicker()}
       >
         <span id={`${id}-value`} className={value ? undefined : 'picker-field__placeholder'}>
-          {selectedDate ? dateFormatter.format(selectedDate) : 'Velg dato'}
+          {selectedDate ? formatDisplayDate(selectedDate) : 'Velg dato'}
         </span>
         <span className="picker-field__icon" aria-hidden="true">▦</span>
       </button>
@@ -172,7 +184,7 @@ export function DatePickerField({ id, label, value, min, required, error, onChan
                           ].filter(Boolean).join(' ')}
                           type="button"
                           disabled={disabled}
-                          aria-label={dateFormatter.format(day)}
+                          aria-label={formatDisplayDate(day)}
                           aria-pressed={dayValue === value}
                           onClick={() => {
                             onChange(dayValue)
@@ -190,7 +202,7 @@ export function DatePickerField({ id, label, value, min, required, error, onChan
           </table>
         </div>
       )}
-      {error && <p className="error-message">{error}</p>}
+      {error && <p id={`${id}-error`} className="error-message">{error}</p>}
     </div>
   )
 }
