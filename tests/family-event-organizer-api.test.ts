@@ -116,6 +116,19 @@ describe('organizer attendance persistence', () => {
 })
 
 describe('event attendance read API', () => {
+  it('includes linked invitation metadata when requested by the event owner', async () => {
+    const loadInvitation = vi.fn().mockResolvedValue({ id: 'invitation', ownerId: 'mads', description: 'Privat innhold' })
+    const response = await createReadFamilyEventFunction({ ...dependencies(), loadInvitation })(request('GET', null, '&includeInvitation=true'))
+    expect((await response.json()).invitation).toEqual({ id: 'invitation', ownerId: 'mads' })
+    expect(loadInvitation).toHaveBeenCalledWith(eventId)
+  })
+
+  it('does not look up invitation deletion metadata for another family', async () => {
+    const loadInvitation = vi.fn()
+    const response = await createReadFamilyEventFunction({ ...dependencies(), loadInvitation, authenticate: () => ({ id: 'anette', displayName: 'Anette' }) })(request('GET', null, '&includeInvitation=true'))
+    expect((await response.json()).invitation).toBeNull()
+    expect(loadInvitation).not.toHaveBeenCalled()
+  })
   it('returns shared attendance and stored organizer selections for editing', async () => {
     const deps = dependencies()
     const organizerRsvp = { eventId, familyId: 'mads', memberIds: ['casper'], guestNames: [], nobodyAttending: false, createdAt: timestamp, updatedAt: timestamp }

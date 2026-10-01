@@ -53,7 +53,7 @@ describe('family event details deletion', () => {
     vi.clearAllMocks()
   })
 
-  async function renderDetails({ ownerId = 'anette', deleteStatus = 204, fromCalendar = false, fromRegistrations = false } = {}) {
+  async function renderDetails({ ownerId = 'anette', deleteStatus = 204, fromCalendar = false, fromRegistrations = false, invitation = null as { id: string; ownerId: string } | null } = {}) {
     let deleted = false
     const fetchMock = vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
       const url = String(input)
@@ -65,7 +65,7 @@ describe('family event details deletion', () => {
         return new Response(JSON.stringify({ events: deleted ? [] : [{ ...familyEvent, ownerId }] }), { status: 200 })
       }
       if (url.includes('read-bookings')) return new Response(JSON.stringify({ bookings: [] }), { status: 200 })
-      return new Response(JSON.stringify({ event: { ...familyEvent, ownerId } }), { status: 200 })
+      return new Response(JSON.stringify({ event: { ...familyEvent, ownerId }, invitation }), { status: 200 })
     })
     vi.stubGlobal('fetch', fetchMock)
     const container = document.createElement('div')
@@ -170,5 +170,38 @@ describe('family event details deletion', () => {
     await act(async () => button(dialog, 'Slett').click())
     expect(mockedAuth.expireSession).toHaveBeenCalledOnce()
     expect(container.querySelector('output')?.textContent).toBe(`/booking/event/${familyEvent.id}`)
+  })
+
+  it('offers event only, both, and cancel for a linked invitation', async () => {
+    const { container, fetchMock } = await renderDetails({ invitation: { id: 'invitation', ownerId: 'anette' } })
+    act(() => button(container, 'Slett').click())
+    const dialog = container.querySelector('[role="alertdialog"]')!
+    expect(dialog.classList.contains('booking-delete-dialog')).toBe(true)
+    expect(dialog.querySelector('h2')?.textContent).toBe('Vil du også slette invitasjonen fra Oppslagstavla?')
+    expect([...dialog.querySelectorAll('button')].map((entry) => entry.textContent)).toEqual(['Avbryt', 'Slett bare arrangementet', 'Slett begge'])
+    act(() => button(dialog, 'Avbryt').click())
+    expect(container.querySelector('[role="alertdialog"]')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['Slett bare arrangementet', ''],
+    ['Slett begge', '&deleteLinkedPost=true'],
+  ])('sends explicit deletion scope after choosing %s', async (choice, scope) => {
+    const { container, fetchMock } = await renderDetails({ invitation: { id: 'invitation', ownerId: 'anette' } })
+    act(() => button(container, 'Slett').click())
+    await act(async () => button(container.querySelector('[role="alertdialog"]')!, choice).click())
+    expect(fetchMock).toHaveBeenCalledWith(`/.netlify/functions/delete-family-event?id=${familyEvent.id}${scope}`, {
+      method: 'DELETE', credentials: 'include', headers: { Accept: 'application/json' },
+    })
+    expect(container.querySelector('output')?.textContent).toBe('/booking/calendar?month=2026-09')
+  })
+
+  it('allows event-only deletion but disables deleting another family’s invitation', async () => {
+    const { container } = await renderDetails({ invitation: { id: 'invitation', ownerId: 'mads' } })
+    act(() => button(container, 'Slett').click())
+    const dialog = container.querySelector('[role="alertdialog"]')!
+    expect(button(dialog, 'Slett begge').disabled).toBe(true)
+    expect(button(dialog, 'Slett bare arrangementet').disabled).toBe(false)
   })
 })
