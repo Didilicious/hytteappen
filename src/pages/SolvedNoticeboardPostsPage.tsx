@@ -6,6 +6,7 @@ import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import NoticeboardTypeIcon from '../components/NoticeboardTypeIcon'
 import ProfileImage from '../components/ProfileImage'
+import FamilyEventInvitationCard from '../components/FamilyEventInvitationCard'
 import { loadSolvedNoticeboardPosts } from '../noticeboard'
 
 const solvedDateFormatter = new Intl.DateTimeFormat('nb-NO', {
@@ -96,6 +97,7 @@ export default function SolvedNoticeboardPostsPage() {
                     <span className="noticeboard-card__solved-status">Løst</span>
                   </div>
                   <h2><Link to={`/noticeboard/${post.id}`}>{post.title}</Link></h2>
+                  {post.eventId && <FamilyEventInvitationCard eventId={post.eventId} />}
                   <div className="noticeboard-card__author">
                     {owner && (
                       <ProfileImage

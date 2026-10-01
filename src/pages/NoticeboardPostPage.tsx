@@ -6,6 +6,8 @@ import { useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
 import NoticeboardTypeIcon from '../components/NoticeboardTypeIcon'
 import ProfileImage from '../components/ProfileImage'
+import FamilyEventInvitationCard from '../components/FamilyEventInvitationCard'
+import NoticeboardPostEditor from '../components/NoticeboardPostEditor'
 import {
   createNoticeboardComment,
   loadNoticeboardComments,
@@ -148,6 +150,8 @@ export default function NoticeboardPostPage() {
             </div>
             <h1>{post.title}</h1>
             {post.description && <p className="noticeboard-detail__description">{post.description}</p>}
+            {post.eventId && <FamilyEventInvitationCard eventId={post.eventId} />}
+            <NoticeboardPostEditor key={post.id} post={post} onUpdated={setPost} />
             <dl className="noticeboard-detail__meta">
               <div>
                 <dt>Opprettet av</dt>

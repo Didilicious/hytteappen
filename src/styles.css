@@ -2635,6 +2635,16 @@ h1 {
   font-weight: 500;
 }
 
+.noticeboard-delete-dialog {
+  max-width: calc(100vw - 40px);
+  max-height: calc(100dvh - 40px);
+  color: var(--ink);
+}
+
+.noticeboard-delete-dialog::backdrop {
+  background: rgb(30 45 38 / 58%);
+}
+
 .booking-delete-dialog > p {
   margin: 14px 0 24px;
   color: var(--muted);
@@ -3001,6 +3011,37 @@ h1 {
   gap: 12px;
 }
 
+.family-event-invitation {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--linen);
+  color: var(--forest);
+  overflow-wrap: anywhere;
+}
+
+.family-event-invitation h3,
+.family-event-invitation p {
+  margin: 0;
+}
+
+.family-event-invitation__label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.family-event-invitation__location {
+  white-space: pre-wrap;
+}
+
+.family-event-invitation a,
+.family-event-invitation button {
+  justify-self: start;
+}
+
 .noticeboard-card__type {
   display: inline-flex;
   align-items: center;
@@ -3150,6 +3191,21 @@ h1 {
   font-size: 1.04rem;
   line-height: 1.6;
   white-space: pre-wrap;
+}
+
+.noticeboard-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.noticeboard-post-actions > button {
+  width: auto;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
 }
 
 .noticeboard-detail__meta {
@@ -3306,22 +3362,42 @@ h1 {
   text-decoration: none;
 }
 
-.noticeboard-solve-button {
-  justify-self: start;
+.noticeboard-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   min-height: 44px;
-  margin-top: 2px;
-  padding: 9px 13px;
+}
+
+.noticeboard-card__action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 28px;
+  padding: 4px 10px;
   border: 1.5px solid var(--forest);
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--forest);
   background: transparent;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
   font-weight: 850;
   cursor: pointer;
   transition: color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
-.noticeboard-solve-button:hover:not(:disabled) {
+.noticeboard-card__action::after {
+  position: absolute;
+  inset: -8px 0;
+  content: '';
+}
+
+.noticeboard-card__action:hover:not(:disabled) {
   color: var(--paper);
   background: var(--forest);
   transform: translateY(-1px);

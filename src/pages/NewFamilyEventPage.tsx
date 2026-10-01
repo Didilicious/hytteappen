@@ -32,6 +32,7 @@ export default function NewFamilyEventPage() {
 
   return (
     <FamilyEventForm
+      allowInvitation
       title="Nytt familiearrangement"
       ownerId={currentUser?.id ?? ''}
       ownerName={currentUser?.displayName ?? 'Din familie'}

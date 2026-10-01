@@ -57,6 +57,26 @@ describe('organizer attendance controls', () => {
     expect(container.querySelector('#event-more-info')?.closest('.field-group')?.nextElementSibling).toBe(container.querySelector('fieldset'))
   })
 
+  it('checks invitation creation by default and allows opting out', async () => {
+    const onSubmit = vi.fn().mockResolvedValue('Prøv igjen.')
+    const container = await render(<FamilyEventForm title="Nytt familiearrangement" ownerId="mads" ownerName="Mads"
+      initialValues={values} allowInvitation submitLabel="Lagre" submittingLabel="Lagrer …" onSubmit={onSubmit} onCancel={vi.fn()} />)
+    const invitation = checkbox(container, 'Lag også invitasjon på Oppslagstavlen')
+    expect(invitation.checked).toBe(true)
+    await act(async () => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(onSubmit).toHaveBeenCalledWith({ ...values, organizerMemberIds: [], createInvitation: true })
+    act(() => invitation.click())
+    expect(invitation.checked).toBe(false)
+    await act(async () => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(onSubmit).toHaveBeenLastCalledWith({ ...values, organizerMemberIds: [], createInvitation: false })
+  })
+
+  it('preserves an explicit unchecked invitation value', async () => {
+    const container = await render(<FamilyEventForm title="Nytt familiearrangement" ownerId="mads" ownerName="Mads"
+      initialValues={{ ...values, createInvitation: false }} allowInvitation submitLabel="Lagre" submittingLabel="Lagrer …" onSubmit={vi.fn()} onCancel={vi.fn()} />)
+    expect(checkbox(container, 'Lag også invitasjon på Oppslagstavlen').checked).toBe(false)
+  })
+
   it('submits selected members and allows deselecting everyone', async () => {
     const onSubmit = vi.fn().mockResolvedValue('Kunne ikke lagre arrangementet.')
     const container = await render(form(onSubmit, values))
@@ -78,6 +98,7 @@ describe('organizer attendance controls', () => {
     ), { status: options?.method === 'PATCH' ? 500 : 200 }))
     vi.stubGlobal('fetch', fetchMock)
     const container = await render(<Routes><Route path="/booking/edit/event/:eventId" element={<EditFamilyEventPage />} /></Routes>)
+    expect(container.textContent).not.toContain('Lag også invitasjon på Oppslagstavlen')
     expect(checkbox(container, 'Mads').checked).toBe(true)
     expect(checkbox(container, 'Casper').checked).toBe(true)
     expect(checkbox(container, 'Phillip').checked).toBe(false)

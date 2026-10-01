@@ -16,6 +16,8 @@ vi.mock('../src/noticeboard', () => ({
   markNoticeboardPostSolved: vi.fn(),
 }));
 
+vi.mock('../src/components/FamilyEventInvitationCard', () => ({ default: () => <section aria-label="Invitasjon til familiearrangement" /> }))
+
 vi.mock('../src/auth', () => ({
   useAuth: () => ({
     currentUser: { id: 'anette', displayName: 'Anette' },
@@ -87,6 +89,31 @@ describe('noticeboard overview unread dots', () => {
     expect(container.querySelectorAll('.noticeboard-card__unread-slot')).toHaveLength(2)
     expect(cards[0]?.textContent).toContain('2 kommentarer')
     expect(cards[1]?.textContent).toContain('1 kommentar')
+    for (const card of cards) {
+      const actions = card.querySelector('.noticeboard-card__actions')!
+      expect(actions.previousElementSibling?.className).toBe('noticeboard-card__comments')
+      expect(actions.querySelector('a')?.textContent).toBe('Se innlegg')
+      expect(actions.querySelector('a')?.getAttribute('href')).toBe(card.querySelector('h2 a')?.getAttribute('href'))
+      expect(actions.querySelector('button')).toBeNull()
+    }
     expect(container.querySelector('a[href="/noticeboard/solved"]')?.textContent).toContain('Vis løste innlegg')
+  })
+
+  it('uses Marker som ferdig only for event-linked posts', async () => {
+    loadOpenNoticeboardPostsMock.mockResolvedValue([
+      createPost({ ownerId: 'anette', eventId: '323e4567-e89b-42d3-a456-426614174000' }),
+      createPost({ id: '223e4567-e89b-42d3-a456-426614174000', ownerId: 'anette' }),
+    ])
+    const container = document.createElement('div')
+    document.body.append(container)
+    root = createRoot(container)
+    await act(async () => root?.render(<MemoryRouter><NoticeboardPage /></MemoryRouter>))
+    await flushEffects()
+    expect([...container.querySelectorAll('.noticeboard-solve-button')].map((button) => button.textContent)).toEqual(['Marker som ferdig', 'Marker som løst'])
+    for (const actions of container.querySelectorAll('.noticeboard-card__actions')) {
+      expect(actions.firstElementChild?.textContent).toBe('Se innlegg')
+      expect(actions.lastElementChild?.classList.contains('noticeboard-solve-button')).toBe(true)
+      expect(actions.querySelectorAll('.noticeboard-card__action')).toHaveLength(2)
+    }
   })
 })

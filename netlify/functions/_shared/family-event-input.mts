@@ -1,6 +1,7 @@
 import { isFamilyEventType, type FamilyEvent } from '../../../shared/familyEvents.ts'
 
 export type FamilyEventInput = {
+  createInvitation?: unknown
   organizerMemberIds?: unknown
   eventType?: unknown
   title?: unknown
