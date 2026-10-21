@@ -50,6 +50,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
 export default function App() {
   const { status } = useAuth()
+  const online = useOnline()
 
   return (
     <>
@@ -179,7 +180,7 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {status === 'authenticated' && <Chatbot />}
+      {(status === 'authenticated' || !online) && <Chatbot />}
     </>
   )
 }

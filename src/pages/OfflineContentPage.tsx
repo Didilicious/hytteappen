@@ -57,7 +57,7 @@ export default function OfflineContentPage() {
         </p>
       </div>
       <section className="guide-compact-card offline-card" aria-label="Nedlastede hytteguider" aria-busy={busy || loading}>
-        <p>Last ned alle fire guider med spørsmål, veivalg og bilder. Søk i Drift og Feilsøking fungerer også uten nett.</p>
+        <p>Last ned alle fire guider med spørsmål, veivalg og bilder. Søk i Drift og Feilsøking fungerer også uten nett. Hyttehjelperen kan søke i de nedlastede guidene og vise relevante utdrag uten internett.</p>
         <ul className="offline-guide-list">
           {Object.values(guides).map((guide) => <li key={guide.id}>
             {bundle ? <Link to={`/guide/${guide.id}`}>{guide.title} <span aria-hidden="true">→</span></Link> : guide.title}
