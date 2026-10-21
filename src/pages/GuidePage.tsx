@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import type { GuideContent } from '../../shared/guideContent'
 import GuideContentSections from '../components/GuideContentSections'
 import DriftReference from '../components/DriftReference'
@@ -16,6 +16,7 @@ import {
 } from '../guideEngine'
 import { loadGuideImages, type GuideImagesLoadState } from '../guideImages'
 import { useGuideState } from '../guideStorage'
+import { useOnline } from '../offlineGuides'
 
 function GuideBackButton({ onClick }: { onClick: () => void }) {
   return (
@@ -143,12 +144,15 @@ function GuideContentError({ kind }: { kind: 'load' | 'configuration' }) {
   return (
     <div className="guide-content-error page-enter" role="alert">
       <p className="eyebrow">Guideinnhold</p>
-      <h1>{kind === 'configuration' ? 'Guiden er feil konfigurert' : 'Kunne ikke laste guiden'}</h1>
+      <h1>{navigator.onLine === false ? 'Guiden er ikke tilgjengelig offline' : kind === 'configuration' ? 'Guiden er feil konfigurert' : 'Kunne ikke laste guiden'}</h1>
       <p>
-        {kind === 'configuration'
+        {navigator.onLine === false
+          ? 'Last ned hytteguidene under Offline-innhold når du har internett.'
+          : kind === 'configuration'
           ? 'Regnearket mangler nødvendige kolonner eller inneholder ugyldige verdier.'
           : 'Google-regnearket er ikke tilgjengelig akkurat nå. Oppdater siden og prøv igjen.'}
       </p>
+      <Link className="back-button" to="/offline-innhold">Offline-innhold</Link>
       <button className="secondary-button" type="button" onClick={() => window.location.reload()}>
         Oppdater siden
       </button>
@@ -158,6 +162,7 @@ function GuideContentError({ kind }: { kind: 'load' | 'configuration' }) {
 
 export default function GuidePage() {
   const { guideId, nodeId } = useParams()
+  const online = useOnline()
   const navigate = useNavigate()
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [contentState, setContentState] = useState<GuideContentLoadState>({ status: 'loading' })
@@ -167,6 +172,8 @@ export default function GuidePage() {
 
   useEffect(() => {
     let isActive = true
+    setContentState({ status: 'loading' })
+    setImageState({ status: 'loading' })
     loadGuideContent()
       .then((content) => {
         if (!isActive) return
@@ -190,7 +197,7 @@ export default function GuidePage() {
     return () => {
       isActive = false
     }
-  }, [])
+  }, [online])
 
   useEffect(() => {
     if (!['cabin-operations', 'troubleshooting'].includes(guideId ?? '') || !nodeId || nodeId === 'overview') return

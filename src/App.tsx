@@ -15,6 +15,8 @@ import FamilyOverviewPage from './pages/FamilyOverviewPage'
 import FamilyProfilePage from './pages/FamilyProfilePage'
 import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
+import OfflineContentPage from './pages/OfflineContentPage'
+import { useOnline } from './offlineGuides'
 import LoginPage from './pages/LoginPage'
 import NewBookingPage from './pages/NewBookingPage'
 import NewCalendarEntryPage from './pages/NewCalendarEntryPage'
@@ -27,6 +29,13 @@ import SolvedNoticeboardPostsPage from './pages/SolvedNoticeboardPostsPage'
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation()
   const { status } = useAuth()
+  const online = useOnline()
+
+  // Offline access exposes only explicitly downloaded guides, never a restored user session.
+  if (!online) {
+    if (location.pathname.startsWith('/guide/') || location.pathname === '/offline-innhold') return children
+    return <Navigate to="/offline-innhold" replace />
+  }
 
   if (status === 'loading') {
     return null
@@ -46,6 +55,7 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
+        <Route path="/offline-innhold" element={<ProtectedRoute><OfflineContentPage /></ProtectedRoute>} />
         <Route
           path="/login"
           element={status === 'authenticated' ? <Navigate to="/" replace /> : <LoginPage />}

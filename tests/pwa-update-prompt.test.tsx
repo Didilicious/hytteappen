@@ -12,11 +12,12 @@ describe('PWA update prompt', () => {
     act(() => root?.unmount())
     root = undefined
     document.body.innerHTML = ''
+    vi.restoreAllMocks()
     vi.unstubAllGlobals()
     vi.unstubAllEnvs()
   })
 
-  async function renderUpdate(hasController = true) {
+  async function renderUpdate(hasController = true, installed = true, ios = false) {
     vi.stubEnv('PROD', true)
     const waiting = { postMessage: vi.fn() }
     const installing = new EventTarget()
@@ -29,7 +30,8 @@ describe('PWA update prompt', () => {
       controller: hasController ? {} : null,
       register: vi.fn(async () => registration),
     })
-    vi.stubGlobal('navigator', { serviceWorker, onLine: true })
+    vi.stubGlobal('navigator', { serviceWorker, onLine: true, standalone: ios })
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: installed && query === '(display-mode: standalone)' }) as MediaQueryList)
     const container = document.createElement('div')
     document.body.append(container)
     root = createRoot(container)
@@ -57,6 +59,22 @@ describe('PWA update prompt', () => {
     act(() => container.querySelectorAll<HTMLButtonElement>('button')[1].click())
     expect(container.textContent).toBe('')
     expect(waiting.postMessage).not.toHaveBeenCalled()
+  })
+
+  it('registers offline support in a browser without prompting or activating a waiting update', async () => {
+    const { container, waiting, registration, installing, serviceWorker } = await renderUpdate(true, false)
+    registration.waiting = waiting
+    act(() => installing.dispatchEvent(new Event('statechange')))
+    expect(container.textContent).toBe('')
+    expect(serviceWorker.register).toHaveBeenCalled()
+    expect(waiting.postMessage).not.toHaveBeenCalled()
+  })
+
+  it('offers an update in an iPhone home-screen app', async () => {
+    const { container, waiting, registration, installing } = await renderUpdate(true, false, true)
+    registration.waiting = waiting
+    act(() => installing.dispatchEvent(new Event('statechange')))
+    expect(container.textContent).toContain('En ny versjon av Hytteappen er klar')
   })
 
   it('does not show an update prompt for the first installation', async () => {

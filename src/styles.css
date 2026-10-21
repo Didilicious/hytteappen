@@ -4800,3 +4800,20 @@ h1 {
     transition-duration: 0.01ms !important;
   }
 }
+
+.offline-card {
+  display: grid;
+  gap: 24px;
+  margin-top: 1.5rem;
+  padding: clamp(20px, 4vw, 32px);
+}
+.offline-details { display: grid; gap: 12px; }
+.offline-card .instruction-actions {
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.offline-guide-list { margin: 0; padding-left: 1.25rem; }
+.offline-guide-list li { padding: .5rem 0; }
+.offline-guide-list a { display: inline-flex; gap: 1rem; align-items: center; min-height: 44px; color: var(--ink); }
+.offline-card progress { width: 100%; accent-color: var(--accent); }
+.offline-card .offline-note { color: var(--muted); font-size: .875rem; line-height: 1.6; }

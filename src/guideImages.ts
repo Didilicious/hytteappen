@@ -22,7 +22,7 @@ function isGuideImage(value: unknown): value is GuideImage {
   return typeof image.name === 'string' && typeof image.src === 'string'
 }
 
-function readImagesResponse(value: unknown, groups: readonly string[]) {
+export function readImagesResponse(value: unknown, groups: readonly string[]) {
   const response = value as Partial<GuideImagesResponse> | null
   if (!response?.imagesByGroup || typeof response.imagesByGroup !== 'object') return null
 
@@ -54,6 +54,7 @@ function requestDriveImages(searchParams: URLSearchParams) {
 }
 
 export function loadGuideImages(content: readonly GuideContent[]) {
+  if (navigator.onLine === false) return import('./offlineGuides').then(({ offlineImages }) => offlineImages())
   if (!guideImagesPromise) {
     const groups = collectImageGroups(content)
 
@@ -73,6 +74,7 @@ export function loadGuideImages(content: readonly GuideContent[]) {
     }
   }
 
+  guideImagesPromise.catch(() => { guideImagesPromise = undefined })
   return guideImagesPromise
 }
 
