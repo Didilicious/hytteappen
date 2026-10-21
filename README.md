@@ -57,3 +57,13 @@ The new table is defined in `db/schema.ts` and its migration is applied automati
 Netlify runs `npm run build`, publishes `dist`, and rewrites application routes to `index.html` so refreshed guide URLs continue to work.
 
 Secure `{{ENVIRONMENT_VARIABLE}}` placeholders in Sheet display text are resolved inside the guide-content function after authentication. Missing placeholder values are treated as configuration errors and are never returned to the browser.
+
+## Progressive web app
+
+Hytteappen can be installed from its HTTPS site: use Chrome's **Installer app** option on Android, or Safari's **Del → Legg til på Hjem-skjerm** on iPhone. Launching the installed icon opens the app in standalone mode. Authentication and online features work as before; installation does not grant access or make personal data available offline.
+
+The small build-only plugin in `pwa/plugin.ts` generates `/sw.js` from the production asset list. Only static HTML, bundled JavaScript/CSS/fonts, the manifest and installation icons are precached. The icons reuse the existing cabin mark, with opaque backgrounds and maskable safe margins. API responses, Google Sheets responses, sessions, profile images and all other runtime data bypass the worker. Existing application storage is unchanged. No offline guide downloads or push notifications are implemented; future features can extend the single worker separately without widening the shell cache policy.
+
+New deployments are checked on startup, when returning to the app, after reconnecting and hourly while visible. An installed update waits until the user selects **Oppdater nå**; **Senere** keeps the current page open. Save unfinished work before accepting an update. The initial installation does not prompt or reload.
+
+After Netlify's production build/deploy, verify in Chrome DevTools **Application** that the manifest has no installability errors, the worker is active, and Cache Storage contains only the shell allowlist. Test installation on Android and iPhone and open a direct guide URL. Visit calendar/profile pages and confirm no API responses or uploaded images enter Cache Storage. Deploy a second version, return to the existing app, check **Senere**, then reopen and choose **Oppdater nå** to verify the new version loads without losing the signed-in session. Production workers are deliberately disabled in Vite development mode.
