@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 
+function isInstalledApp() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true
+}
+
 export default function PwaUpdatePrompt() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null)
   const [updating, setUpdating] = useState(false)
@@ -13,7 +18,7 @@ export default function PwaUpdatePrompt() {
     let timer: ReturnType<typeof setInterval> | undefined
 
     const showWaiting = () => {
-      if (!disposed && registration?.waiting && navigator.serviceWorker.controller) {
+      if (!disposed && isInstalledApp() && registration?.waiting && navigator.serviceWorker.controller) {
         setWaiting(registration.waiting)
       }
     }

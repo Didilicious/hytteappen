@@ -22,7 +22,7 @@ function isGuideContent(value: unknown): value is GuideContent {
     && typeof content.canSkip === 'boolean'
 }
 
-function readContentResponse(value: unknown) {
+export function readContentResponse(value: unknown) {
   const response = value as Partial<GuideContentResponse> | null
   if (!Array.isArray(response?.content) || response.content.some((item) => !isGuideContent(item))) return null
 
@@ -30,6 +30,10 @@ function readContentResponse(value: unknown) {
 }
 
 export function loadGuideContent() {
+  if (navigator.onLine === false) return import('./offlineGuides').then(({ readOfflineGuides }) => readOfflineGuides()).then((bundle) => {
+    if (!bundle) throw new Error('Offline guides unavailable')
+    return bundle.content
+  })
   if (!guideContentPromise) {
     guideContentPromise = fetch('/.netlify/functions/guide-content', {
       credentials: 'include',
@@ -56,5 +60,6 @@ export function loadGuideContent() {
     })
   }
 
+  guideContentPromise.catch(() => { guideContentPromise = undefined })
   return guideContentPromise
 }

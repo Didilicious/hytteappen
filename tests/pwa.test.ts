@@ -13,7 +13,7 @@ function worker() {
   const cache = { match, addAll }
   const caches = { open: vi.fn(async () => cache), keys: vi.fn(async () => ['hytteappen-shell-old', 'unrelated-cache']), delete: vi.fn() }
   const self = { location: { origin: 'https://hytteappen.test' }, addEventListener: (name: string, callback: (event: any) => void) => { listeners[name] = callback }, skipWaiting: vi.fn() }
-  const fetch = vi.fn()
+  const fetch = vi.fn().mockRejectedValue(new TypeError('Offline'))
   const requests: Array<{ url: string; options: unknown }> = []
   runInNewContext(readFileSync(new URL('../pwa/service-worker.js', import.meta.url), 'utf8')
     .replace('__SHELL_VERSION__', 'test')
@@ -40,13 +40,33 @@ describe('PWA shell privacy and lifecycle', () => {
     expect(respondWith).not.toHaveBeenCalled()
   })
 
-  it.each(['/booking/event/123', '/guide/open/start', '/login', '/familieoversikt/123', '/noticeboard/42'])('serves only the static HTML for navigation to %s', async (path) => {
+  it.each(['/booking/event/123', '/guide/open/start', '/offline-innhold', '/login', '/familieoversikt/123', '/noticeboard/42'])('falls back to only the static HTML when offline at %s', async (path) => {
     const { listeners, cache, fetch } = worker()
     const respondWith = vi.fn()
     listeners.fetch({ request: { url: `https://hytteappen.test${path}`, method: 'GET', mode: 'navigate' }, respondWith })
     expect(await respondWith.mock.calls[0][0]).toBe('cached shell')
     expect(cache.match).toHaveBeenCalledWith('/index.html')
-    expect(fetch).not.toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalledWith(expect.objectContaining({ mode: 'navigate' }), { cache: 'no-store' })
+  })
+
+  it('loads current HTML from the network even when an older shell is cached', async () => {
+    const { listeners, cache, fetch } = worker()
+    const latest = { ok: true, body: 'latest deployment' }
+    fetch.mockResolvedValue(latest)
+    const respondWith = vi.fn()
+    const request = { url: 'https://hytteappen.test/guide/open-cabin', method: 'GET', mode: 'navigate' }
+    listeners.fetch({ request, respondWith })
+    expect(await respondWith.mock.calls[0][0]).toBe(latest)
+    expect(fetch).toHaveBeenCalledExactlyOnceWith(request, { cache: 'no-store' })
+    expect(cache.match).not.toHaveBeenCalled()
+  })
+
+  it('uses the offline shell if the server returns an error', async () => {
+    const { listeners, fetch } = worker()
+    fetch.mockResolvedValue({ ok: false, status: 503 })
+    const respondWith = vi.fn()
+    listeners.fetch({ request: { url: 'https://hytteappen.test/', method: 'GET', mode: 'navigate' }, respondWith })
+    expect(await respondWith.mock.calls[0][0]).toBe('cached shell')
   })
 
   it('installs only explicit shell URLs without credentials and waits for user approval', async () => {
