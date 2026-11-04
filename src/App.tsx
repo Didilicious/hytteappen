@@ -58,6 +58,8 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
+        <Route path="/hytta" element={<ProtectedRoute><HomePage section="hytta" /></ProtectedRoute>} />
+        <Route path="/familien" element={<ProtectedRoute><HomePage section="familien" /></ProtectedRoute>} />
         <Route path="/innstillinger" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/innstillinger/varsler" element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} />
         <Route path="/offline-innhold" element={<ProtectedRoute><OfflineContentPage /></ProtectedRoute>} />

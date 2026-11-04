@@ -24,7 +24,7 @@ export default function NewFamilyEventPage() {
         return 'Økten har utløpt. Logg inn på nytt.'
       }
       if (!response.ok) return readErrorMessage(response, 'Kunne ikke lagre arrangementet. Prøv igjen.')
-      navigate('/booking/calendar', { replace: true, state: { eventCreated: true } })
+      navigate('/booking/calendar?view=events', { replace: true, state: { eventCreated: true } })
     } catch {
       return 'Kunne ikke lagre arrangementet. Sjekk forbindelsen og prøv igjen.'
     }

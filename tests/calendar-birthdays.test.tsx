@@ -71,6 +71,26 @@ describe('calendar birthdays', () => {
     return container
   }
 
+  it('shows only bookings in the cabin view and keeps that view when changing month', async () => {
+    const container = await renderCalendar('/booking/calendar?month=2026-05&view=bookings', [booking])
+    expect(container.querySelector('h1')?.textContent).toBe('Hyttebooking')
+    expect(container.querySelector('.calendar-booking')).not.toBeNull()
+    expect(container.querySelector('.calendar-birthday-portrait')).toBeNull()
+    const next = container.querySelector<HTMLButtonElement>('button[aria-label="Neste måned"]')
+    expect(next).not.toBeNull()
+    await act(async () => next?.click())
+    await settle()
+    expect(container.querySelector('h1')?.textContent).toBe('Hyttebooking')
+    expect(container.querySelector('.calendar-birthday-portrait')).toBeNull()
+  })
+
+  it('hides bookings and shows birthdays in the family view', async () => {
+    const container = await renderCalendar('/booking/calendar?month=2026-05&view=events', [booking])
+    expect(container.querySelector('h1')?.textContent).toBe('Familiearrangementer')
+    expect(container.querySelector('.calendar-booking')).toBeNull()
+    expect(container.querySelector('button[aria-label="2 bursdager"]')).not.toBeNull()
+  })
+
   it('shows two birthdays and a booking together, then opens both names', async () => {
     const container = await renderCalendar('/booking/calendar?month=2026-05', [booking])
     const birthdayButton = container.querySelector<HTMLButtonElement>('button[aria-label="2 bursdager"]')

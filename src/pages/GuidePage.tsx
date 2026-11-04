@@ -354,7 +354,7 @@ export default function GuidePage() {
 
   return (
     <GuideLayout guide={guide}>
-      <GuideBackButton onClick={() => navigate(previousPage ? nodePath(previousPage.id) : '/')} />
+      <GuideBackButton onClick={() => navigate(previousPage ? nodePath(previousPage.id) : '/hytta')} />
       <div className="guide-heading page-enter">
         <p className="eyebrow">{currentPage.type === 'question' ? 'Velg det som passer' : 'Guide-steg'}</p>
         <h1>{currentPage.title}</h1>

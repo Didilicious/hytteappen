@@ -8,7 +8,7 @@ export default function FamilyOverviewPage() {
 
   return (
     <AppFrame showAccount>
-      <button className="back-button" type="button" onClick={() => navigate('/')}>
+      <button className="back-button" type="button" onClick={() => navigate('/familien')}>
         <span aria-hidden="true">←</span>
         Tilbake
       </button>

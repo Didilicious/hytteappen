@@ -21,8 +21,8 @@ export function parseCalendarMonth(search: string, fallback: Date) {
   return getCalendarMonthKey(month) === value ? month : startOfMonth(fallback)
 }
 
-export function getCalendarPath(month: Date) {
-  return `/booking/calendar?month=${getCalendarMonthKey(month)}`
+export function getCalendarPath(month: Date, view?: string | null) {
+  return `/booking/calendar?month=${getCalendarMonthKey(month)}${view === 'bookings' || view === 'events' ? `&view=${view}` : ''}`
 }
 
 export function getBookingDetailsPath(bookingId: string) {
