@@ -1,11 +1,7 @@
 import { FormEvent, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { familyMembers, useAuth } from '../auth'
 import AppFrame from '../components/AppFrame'
-
-type LoginLocationState = {
-  from?: string
-}
 
 export default function LoginPage() {
   const [accountId, setAccountId] = useState('')
@@ -14,7 +10,6 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { login, status } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -34,8 +29,7 @@ export default function LoginPage() {
       return
     }
 
-    const state = location.state as LoginLocationState | null
-    navigate(state?.from ?? '/', { replace: true })
+    navigate('/', { replace: true })
   }
 
   return (

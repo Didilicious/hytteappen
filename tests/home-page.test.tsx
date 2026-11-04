@@ -54,7 +54,7 @@ describe('home page Drive icons', () => {
     vi.restoreAllMocks()
   })
 
-  async function renderHome() {
+  async function renderHome(section: 'hytta' | 'familien' | null = 'hytta') {
     if (!loadNoticeboardUnseenCountMock.getMockImplementation()) {
       loadNoticeboardUnseenCountMock.mockResolvedValue(0)
     }
@@ -66,7 +66,7 @@ describe('home page Drive icons', () => {
       root?.render(
         <MemoryRouter initialEntries={['/']}>
           <Routes>
-            <Route path="*" element={<><HomePage /><LocationPath /></>} />
+            <Route path="*" element={<><HomePage section={section ?? undefined} /><LocationPath /></>} />
           </Routes>
         </MemoryRouter>,
       )
@@ -89,10 +89,8 @@ describe('home page Drive icons', () => {
     expect(findButton(container, 'Stenge hytte')?.querySelector('img')?.src).toContain(homeIconNames.closeCabin)
     expect(findButton(container, 'Drift av hytte')?.querySelector('img')?.src).toContain(homeIconNames.operations)
     expect(findButton(container, 'Feilsøking')?.querySelector('img')?.src).toContain(homeIconNames.troubleshooting)
-    expect(findButton(container, 'Familiekalender')?.querySelector('img')?.src).toContain(homeIconNames.booking)
+    expect(findButton(container, 'Hyttebooking')?.querySelector('img')?.src).toContain(homeIconNames.booking)
     expect(findButton(container, 'Oppslagstavle')?.querySelector('img')?.src).toContain(homeIconNames.noticeboard)
-    expect(findButton(container, 'Familieoversikt')?.querySelector('img')?.src).toContain(homeIconNames.family)
-    expect(findButton(container, 'Planlegge mat')?.querySelector('img')?.src).toContain(homeIconNames.food)
   })
 
   it('keeps the reserved icon areas empty while Drive icons are loading', async () => {
@@ -101,7 +99,7 @@ describe('home page Drive icons', () => {
     const container = await renderHome()
     const iconAreas = container.querySelectorAll('.task-button__icon')
 
-    expect(iconAreas).toHaveLength(currentHomeIconNames.length)
+    expect(iconAreas).toHaveLength(6)
     iconAreas.forEach((iconArea) => expect(iconArea.querySelector('img')).toBeNull())
   })
 
@@ -114,9 +112,8 @@ describe('home page Drive icons', () => {
     container.querySelectorAll('.task-button__icon').forEach((iconArea) => {
       expect(iconArea.querySelector('img')).toBeNull()
     })
-    expect(warning).toHaveBeenCalledTimes(currentHomeIconNames.length)
+    expect(warning).toHaveBeenCalledTimes(6)
     expect(warning.mock.calls.flat().join(' ')).toContain(homeIconNames.noticeboard)
-    expect(warning.mock.calls.flat().join(' ')).toContain(homeIconNames.family)
   })
 
   it('keeps an icon area empty when its Drive image fails to load', async () => {
@@ -140,9 +137,8 @@ describe('home page Drive icons', () => {
     ['Stenge hytte', '/guide/close-cabin'],
     ['Drift av hytte', '/guide/cabin-operations'],
     ['Feilsøking', '/guide/troubleshooting'],
-    ['Familiekalender', '/booking'],
+    ['Hyttebooking', '/booking/calendar'],
     ['Oppslagstavle', '/noticeboard'],
-    ['Familieoversikt', '/familieoversikt'],
   ])('keeps %s navigation unchanged', async (label, expectedPath) => {
     loadHomeIconsMock.mockResolvedValue({})
     const container = await renderHome()
@@ -152,12 +148,12 @@ describe('home page Drive icons', () => {
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe(expectedPath)
   })
 
-  it('keeps Planlegge mat disabled while Oppslagstavle is active', async () => {
+  it('keeps the noticeboard available without unfinished features', async () => {
     loadHomeIconsMock.mockResolvedValue({})
     const container = await renderHome()
     const foodButton = findButton(container, 'Planlegge mat')
 
-    expect(foodButton?.disabled).toBe(true)
+    expect(foodButton).toBeUndefined()
     expect(findButton(container, 'Oppslagstavle')?.disabled).toBe(false)
     expect(container.querySelector('[data-testid="location"]')?.textContent).toBe('/')
   })
@@ -187,4 +183,20 @@ describe('home page Drive icons', () => {
     expect(findButton(container, 'Oppslagstavle')).toBeDefined()
     expect(container.querySelector('.task-button__badge')).toBeNull()
   })
+  it('shows only the two section buttons on the landing page', async () => {
+    loadHomeIconsMock.mockResolvedValue({})
+    const container = await renderHome(null)
+    expect([...container.querySelectorAll('.task-button__label')].map((item) => item.textContent)).toEqual(['Hytta', 'Familien'])
+    act(() => findButton(container, 'Familien')?.click())
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe('/familien')
+  })
+
+  it('shows the family actions with the shared noticeboard and events calendar', async () => {
+    loadHomeIconsMock.mockResolvedValue({})
+    const container = await renderHome('familien')
+    expect([...container.querySelectorAll('.task-button__label')].map((item) => item.textContent)).toEqual(['Familiearrangementer', 'Oppslagstavle', 'Familieoversikt'])
+    act(() => findButton(container, 'Oppslagstavle')?.click())
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe('/noticeboard')
+  })
+
 })

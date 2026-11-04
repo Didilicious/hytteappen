@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { GuideImage } from '../../shared/guideImages'
 import { bookingIconNames, currentBookingIconNames } from '../bookingIcons'
+import { useSection } from '../sections'
 import AppFrame from '../components/AppFrame'
 import DriveIcon, { warnAboutMissingDriveIcons } from '../components/DriveIcon'
 import { loadHomeIcons } from '../guideImages'
@@ -20,7 +21,9 @@ const bookingActions: BookingAction[] = [
 
 export default function BookingLandingPage() {
   const navigate = useNavigate()
+  const section = useSection()
   const location = useLocation()
+  const calendarLabel = section === 'hytta' ? 'Hyttebooking' : section === 'familien' ? 'Familiearrangementer' : 'Familiekalender'
   const bookingCreated = (location.state as { bookingCreated?: boolean } | null)?.bookingCreated === true
   const [showSuccess, setShowSuccess] = useState(bookingCreated)
   const [iconsByName, setIconsByName] = useState<Record<string, GuideImage | null>>({})
@@ -51,14 +54,14 @@ export default function BookingLandingPage() {
 
   return (
     <AppFrame showAccount>
-      <button className="back-button" type="button" onClick={() => navigate('/')}>
+      <button className="back-button" type="button" onClick={() => navigate(section ? `/${section}` : '/')}>
         <span aria-hidden="true">←</span>
         Tilbake
       </button>
 
       <div className="booking-intro page-enter">
-        <p className="eyebrow">Familiekalender</p>
-        <h1>Familiekalender</h1>
+        <p className="eyebrow">{calendarLabel}</p>
+        <h1>{calendarLabel}</h1>
         <p>Hva ønsker du å gjøre?</p>
       </div>
 
@@ -74,7 +77,7 @@ export default function BookingLandingPage() {
             className="task-button"
             type="button"
             key={action.path}
-            onClick={() => navigate(action.path)}
+            onClick={() => navigate(action.path === '/booking/calendar' && section ? `${action.path}?view=${section === 'hytta' ? 'bookings' : 'events'}` : action.path)}
           >
             <span className="task-button__icon" aria-hidden="true">
               <DriveIcon

@@ -231,8 +231,13 @@ a:focus-visible {
 }
 
 .brand-row__center {
+  position: relative;
   grid-column: 2;
   justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 .brand-row__account {
@@ -4845,3 +4850,55 @@ h1 {
 .notification-settings legend { font-weight: 600; margin-bottom: .5rem; }
 .notification-option { display: flex; align-items: center; gap: .75rem; min-height: 48px; cursor: pointer; }
 .notification-option input { width: 1.25rem; height: 1.25rem; flex-shrink: 0; accent-color: var(--color-primary, #385b48); }
+
+.section-select {
+  width: auto;
+  min-width: 0;
+  min-height: 28px;
+  padding: 3px 25px 3px 10px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--forest);
+  background-color: var(--linen);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.brand-row__context {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.brand-row__context .guide-switcher__overview {
+  min-height: 28px;
+  padding: 4px 6px;
+  border-left: 0;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+@media (max-width: 520px) {
+  .brand-row__context .guide-switcher__overview span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.section-select:hover {
+  background-color: var(--disabled);
+}
+
+.calendar-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

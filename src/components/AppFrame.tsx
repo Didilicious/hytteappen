@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import SectionSelect from './SectionSelect'
 import AccountMenu from './AccountMenu'
 
 type AppFrameProps = PropsWithChildren<{
@@ -26,7 +27,12 @@ export default function AppFrame({ children, headerCenter, showAccount = false }
             </span>
             <span className="brand-name">Hytteguiden</span>
           </Link>
-          {headerCenter && <div className="brand-row__center">{headerCenter}</div>}
+          {(headerCenter || showAccount) && (
+            <div className="brand-row__center">
+              {showAccount && <SectionSelect />}
+              {headerCenter && <div className="brand-row__context">{headerCenter}</div>}
+            </div>
+          )}
           {showAccount && <div className="brand-row__account"><AccountMenu /></div>}
         </header>
 

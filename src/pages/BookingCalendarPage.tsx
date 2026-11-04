@@ -89,6 +89,8 @@ type BirthdayDialogState = {
 export default function BookingCalendarPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const view = new URLSearchParams(location.search).get('view')
+  const calendarLabel = view === 'bookings' ? 'Hyttebooking' : view === 'events' ? 'Familiearrangementer' : 'Familiekalender'
   const today = useMemo(() => new Date(), [])
   const todayKey = formatDateKey(today)
   const currentMonth = startOfMonth(today)
@@ -113,10 +115,10 @@ export default function BookingCalendarPage() {
     pendingScrollPosition.current = { x: window.scrollX, y: window.scrollY }
     setSelectedMonth((month) => {
       const nextMonth = updateMonth(month)
-      navigate(getCalendarPath(nextMonth), { replace: true })
+      navigate(getCalendarPath(nextMonth, view), { replace: true })
       return nextMonth
     })
-  }, [navigate])
+  }, [navigate, view])
 
   useEffect(() => {
     if (!birthdayDialog) return
@@ -191,11 +193,11 @@ export default function BookingCalendarPage() {
   }, [])
 
   useEffect(() => {
-    const calendarPath = getCalendarPath(selectedMonth)
+    const calendarPath = getCalendarPath(selectedMonth, view)
     if (`${location.pathname}${location.search}` !== calendarPath) {
       navigate(calendarPath, { replace: true })
     }
-  }, [location.pathname, location.search, navigate, selectedMonth])
+  }, [location.pathname, location.search, navigate, selectedMonth, view])
 
   useLayoutEffect(() => {
     if (loadingState !== 'ready') return
@@ -225,7 +227,7 @@ export default function BookingCalendarPage() {
   }, [loadingState, location.pathname, location.search])
 
   const openBooking = useCallback((bookingId: string) => {
-    const calendarPath = getCalendarPath(selectedMonth)
+    const calendarPath = getCalendarPath(selectedMonth, view)
     const returnState: CalendarReturnState = {
       path: calendarPath,
       scrollX: window.scrollX,
@@ -237,10 +239,10 @@ export default function BookingCalendarPage() {
     } catch {}
 
     navigate(getBookingDetailsPath(bookingId), { state: { calendarPath } })
-  }, [navigate, selectedMonth])
+  }, [navigate, selectedMonth, view])
 
   const openFamilyEvent = useCallback((eventId: string) => {
-    const calendarPath = getCalendarPath(selectedMonth)
+    const calendarPath = getCalendarPath(selectedMonth, view)
     try {
       window.sessionStorage.setItem(calendarReturnStorageKey, JSON.stringify({
         path: calendarPath,
@@ -249,7 +251,7 @@ export default function BookingCalendarPage() {
       } satisfies CalendarReturnState))
     } catch {}
     navigate(getFamilyEventDetailsPath(eventId), { state: { calendarPath } })
-  }, [navigate, selectedMonth])
+  }, [navigate, selectedMonth, view])
 
   const calendarDays = getCalendarDays(selectedMonth)
   const isCurrentMonth = selectedMonth.getFullYear() === currentMonth.getFullYear()
@@ -257,15 +259,19 @@ export default function BookingCalendarPage() {
 
   return (
     <AppFrame showAccount>
-      <button className="back-button" type="button" onClick={() => navigate('/booking')}>
+      <button className="back-button" type="button" onClick={() => navigate(view === 'events' ? '/familien' : view === 'bookings' ? '/hytta' : '/booking')}>
         <span aria-hidden="true">←</span>
-        Tilbake til Familiekalender
+        {view === 'events' ? 'Tilbake til Familien' : view === 'bookings' ? 'Tilbake til Hytta' : 'Kalendermeny'}
       </button>
 
       <div className="calendar-heading page-enter">
-        <p className="eyebrow">Familiekalender</p>
-        <h1>Se kalender</h1>
-        <p>Her ser du hyttebookinger, bursdager og familiearrangementer.</p>
+        <p className="eyebrow">{view === 'events' ? 'Familien' : view === 'bookings' ? 'Hytta' : 'Kalender'}</p>
+        <h1>{calendarLabel}</h1>
+        <p>{view === 'bookings' ? 'Her ser du hyttebookinger.' : view === 'events' ? 'Her ser du familiearrangementer og bursdager.' : 'Her ser du hyttebookinger, bursdager og familiearrangementer.'}</p>
+        <div className="calendar-view-actions">
+          <button className="secondary-button" type="button" onClick={() => navigate(view === 'events' ? '/booking/new/event' : view === 'bookings' ? '/booking/new/booking' : '/booking/new')}>Legg til i kalenderen</button>
+          <button className="text-button" type="button" onClick={() => navigate('/booking/edit')}>Rediger dine registreringer</button>
+        </div>
       </div>
 
       {loadingState === 'loading' && <CalendarLoading />}
@@ -321,9 +327,9 @@ export default function BookingCalendarPage() {
             ))}
 
             {calendarDays.map((calendarDay) => {
-              const dayBookings = getBookingsForDate(bookings, calendarDay.dateKey)
-              const dayEvents = getFamilyEventsForDate(familyEvents, calendarDay.dateKey)
-              const dayBirthdays = getBirthdaysForDate(calendarDay.date)
+              const dayBookings = getBookingsForDate(view === 'events' ? [] : bookings, calendarDay.dateKey)
+              const dayEvents = getFamilyEventsForDate(view === 'bookings' ? [] : familyEvents, calendarDay.dateKey)
+              const dayBirthdays = view === 'bookings' ? [] : getBirthdaysForDate(calendarDay.date)
               const weekday = calendarDay.date.getDay()
 
               return (
@@ -422,8 +428,8 @@ export default function BookingCalendarPage() {
             })}
           </div>
 
-          {!hasBookingsInMonth(bookings, selectedMonth) && !calendarDays.some((day) => (
-            day.isCurrentMonth && getFamilyEventsForDate(familyEvents, day.dateKey).length > 0
+          {!hasBookingsInMonth(view === 'events' ? [] : bookings, selectedMonth) && !calendarDays.some((day) => (
+            day.isCurrentMonth && getFamilyEventsForDate(view === 'bookings' ? [] : familyEvents, day.dateKey).length > 0
           )) && (
             <p className="calendar-empty" role="status">Ingen registreringer denne måneden.</p>
           )}
