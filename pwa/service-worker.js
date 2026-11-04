@@ -32,7 +32,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url)
   if (request.method !== 'GET' || url.origin !== self.location.origin) return
   // Restrict navigation fallback to React routes. Functions and APIs always use the network.
-  const appRoute = /^\/(?:$|login\/?$|offline-innhold\/?$|guide(?:\/|$)|booking(?:\/|$)|familieoversikt(?:\/|$)|noticeboard(?:\/|$))/.test(url.pathname)
+  const appRoute = /^\/(?:$|login\/?$|innstillinger(?:\/|$)|offline-innhold\/?$|guide(?:\/|$)|booking(?:\/|$)|familieoversikt(?:\/|$)|noticeboard(?:\/|$))/.test(url.pathname)
   const navigation = request.mode === 'navigate' && appRoute
   if (!navigation && (url.search || !shellPaths.has(url.pathname))) return
 
@@ -48,5 +48,39 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE_NAME)
     const response = await cache.match(navigation ? '/index.html' : url.pathname)
     return response || fetch(request)
+  })())
+})
+
+self.addEventListener('push', (event) => {
+  let payload = {}
+  try { payload = event.data?.json() || {} } catch { /* Display a fallback for malformed payloads. */ }
+  event.waitUntil(self.registration.showNotification(
+    typeof payload.title === 'string' ? payload.title : 'Hytteappen',
+    {
+      body: typeof payload.body === 'string' ? payload.body : 'Du har et nytt varsel i Hytteappen.',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: typeof payload.url === 'string' ? payload.url : '/' },
+    },
+  ))
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil((async () => {
+    let url = new URL('/', self.location.origin)
+    try {
+      const target = new URL(event.notification.data?.url || '/', self.location.origin)
+      if (target.origin === self.location.origin) url = target
+    } catch { /* Open the app home for invalid destinations. */ }
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    for (const client of windows) {
+      if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+        await client.navigate(url.href)
+        await client.focus()
+        return
+      }
+    }
+    await self.clients.openWindow(url.href)
   })())
 })
