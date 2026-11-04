@@ -79,6 +79,7 @@ export default function AccountMenu() {
           </div>
           <div className="account-menu__separator" />
           <button type="button" role="menuitem" onClick={() => { setIsOpen(false); navigate('/offline-innhold') }}>Offline-innhold</button>
+          <button type="button" role="menuitem" onClick={() => { setIsOpen(false); navigate('/innstillinger') }}>Innstillinger</button>
           <button type="button" role="menuitem" onClick={leaveSession}>Logg ut</button>
         </div>
       )}

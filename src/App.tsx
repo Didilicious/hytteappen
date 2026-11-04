@@ -15,6 +15,8 @@ import FamilyOverviewPage from './pages/FamilyOverviewPage'
 import FamilyProfilePage from './pages/FamilyProfilePage'
 import GuidePage from './pages/GuidePage'
 import HomePage from './pages/HomePage'
+import NotificationSettingsPage from './pages/NotificationSettingsPage'
+import SettingsPage from './pages/SettingsPage'
 import OfflineContentPage from './pages/OfflineContentPage'
 import { useOnline } from './offlineGuides'
 import LoginPage from './pages/LoginPage'
@@ -56,6 +58,8 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
+        <Route path="/innstillinger" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/innstillinger/varsler" element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} />
         <Route path="/offline-innhold" element={<ProtectedRoute><OfflineContentPage /></ProtectedRoute>} />
         <Route
           path="/login"
